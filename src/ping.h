@@ -27,6 +27,7 @@ typedef struct s_ping_t
 	double sum;
 	double msum;
 
+	bool loss;
 	bool finished;
 } t_ping;
 

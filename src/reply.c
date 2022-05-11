@@ -30,6 +30,7 @@ void reply_handler()
 		exit(1);
 	}
 	g_ping.received++;
+	g_ping.loss = false;
 
 	struct timeval now;
 	gettimeofday(&now, NULL);
