@@ -20,7 +20,7 @@ void print_stats()
 
 void reply_handler()
 {
-	struct iphdr ip = {.id = g_ping.packet.un.echo.id};
+	struct iphdr ip = {.id = g_ping.packet.icmp.un.echo.id};
 	struct iovec iov = {.iov_base = &ip, .iov_len = sizeof(ip)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
@@ -36,7 +36,7 @@ void reply_handler()
 	gettimeofday(&now, NULL);
 	double delta = (now.tv_sec - g_ping.last.tv_sec) * 1000.0 + (now.tv_usec - g_ping.last.tv_usec) / 1000.0;
 	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
-		   ip.tot_len / 32 / 8, g_ping.ip, g_ping.packet.un.echo.sequence, ip.ttl, delta);
+		   ip.tot_len / 32 / 8, g_ping.ip, g_ping.packet.icmp.un.echo.sequence, ip.ttl, delta);
 
 	if (g_ping.sent == 1)
 	{

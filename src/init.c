@@ -3,26 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
-unsigned short checksum(void *address, size_t len)
-{
-	unsigned short *src;
-	unsigned long sum;
-
-	src = (unsigned short *)address;
-	sum = 0;
-	while (len > 1)
-	{
-		sum += *src;
-		src++;
-		len -= sizeof(short);
-	}
-	if (len)
-		sum += *(unsigned char *)src;
-	sum = (sum >> 16) + (sum & 0xffff);
-	sum += (sum >> 16);
-	return ((unsigned short)~sum);
-}
+#define TTL 60
 
 void init_ping(void)
 {
@@ -32,12 +15,18 @@ void init_ping(void)
 		perror("socket failed");
 		exit(1);
 	}
+	if (setsockopt(g_ping.fd, IPPROTO_IP, IP_HDRINCL, &(int){1}, sizeof(int)) < 0)
+	{
+		perror("setsockopt failed");
+		exit(1);
+	}
 
-	g_ping.packet.type = ICMP_ECHO;
-	g_ping.packet.code = 0;
-	g_ping.packet.un.echo.id = getpid();
-	g_ping.packet.un.echo.sequence = 0;
-	g_ping.packet.checksum = checksum(&g_ping.packet, sizeof(g_ping.packet));
+	fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), TTL, g_ping.dest.sin_addr.s_addr);
+	fill_icmp_header(&g_ping.packet.icmp);
+	g_ping.packet.icmp.checksum = checksum(&g_ping.packet.icmp, sizeof(g_ping.packet.icmp));
 
-	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname, g_ping.ip, sizeof(g_ping.packet));
+	if (g_ping.verbose)
+		display_header((void *)&g_ping.packet);
+
+	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname, g_ping.ip, sizeof(g_ping.packet.icmp));
 }

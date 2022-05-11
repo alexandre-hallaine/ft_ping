@@ -5,6 +5,7 @@ DIRECTORY_OBJECT	=	objects
 
 FILES_CHECK			=	ping.h
 FILES_SOURCE		=	arg.c \
+						header.c \
 						init.c \
 						signal.c \
 						reply.c \
@@ -13,7 +14,7 @@ FILES_SOURCE		=	arg.c \
 COMPILE				=	gcc
 COMPILE				+=	-Wall -Wextra -Werror
 COMPILE				+=	-g3 -ofast
-ARGS				=	google.com
+ARGS				=	google.com -v
 
 all: $(NAME)
 
