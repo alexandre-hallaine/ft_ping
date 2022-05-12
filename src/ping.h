@@ -33,7 +33,7 @@ typedef struct s_ping
 	double sum;
 	double msum;
 
-	bool loss;
+	bool replied;
 	bool finished;
 } t_ping;
 
@@ -52,5 +52,6 @@ void sigint_handler();
 void sigalrm_handler();
 
 void reply_handler();
+void print_stats();
 
 #endif

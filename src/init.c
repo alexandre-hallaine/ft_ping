@@ -15,7 +15,10 @@ void init_ping(void)
 		perror("socket failed");
 		exit(1);
 	}
-	if (setsockopt(g_ping.fd, IPPROTO_IP, IP_HDRINCL, &(int){1}, sizeof(int)) < 0)
+
+	struct timeval timeout = {1, 0};
+	if (setsockopt(g_ping.fd, IPPROTO_IP, IP_HDRINCL, &(int){1}, sizeof(int)) < 0 ||
+		setsockopt(g_ping.fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0)
 	{
 		perror("setsockopt failed");
 		exit(1);

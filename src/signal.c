@@ -12,7 +12,7 @@ void sigint_handler()
 
 void sigalrm_handler()
 {
-	if (g_ping.loss && g_ping.verbose)
+	if (!g_ping.replied && g_ping.sent && g_ping.verbose)
 		printf("Failed to ping %s\n", g_ping.hostname);
 
 	g_ping.packet.icmp.un.echo.sequence = g_ping.sent;
@@ -28,5 +28,5 @@ void sigalrm_handler()
 	gettimeofday(&g_ping.last, NULL);
 	alarm(1);
 
-	g_ping.loss = true;
+	g_ping.replied = false;
 }

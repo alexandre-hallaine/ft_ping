@@ -28,7 +28,6 @@ unsigned short checksum(void *address, size_t len)
 
 void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest)
 {
-
 	ip->version = 4;			  // 4
 	ip->ihl = sizeof(struct iphdr) / 4; // Internet header length in 32-bit words.
 
@@ -88,13 +87,13 @@ void display_header(void *address)
 	struct iphdr *tmp = (void *)address;
 	// display the IP header
 	printf("\nIP header:\n");
-	printf("  |-IP Version        : %d\n", (unsigned int)tmp->version);
-	printf("  |-IP Header Length  : %d DWORDS or %d Bytes\n", (unsigned int)tmp->ihl,
+	printf("  |-IP Version       : %d\n", (unsigned int)tmp->version);
+	printf("  |-IP Header Length : %d DWORDS or %d Bytes\n", (unsigned int)tmp->ihl,
 		   (unsigned int)(tmp->ihl * 4));
-	printf("  |-Type Of Service   : %d\n", (unsigned int)tmp->tos);
-	printf("  |-IP Total Length   : %d (%d Bytes)\n", (unsigned int)tmp->tot_len,
+	printf("  |-Type Of Service  : %d\n", (unsigned int)tmp->tos);
+	printf("  |-IP Total Length  : %d (%d Bytes)\n", (unsigned int)tmp->tot_len,
 		   (unsigned int)tmp->tot_len / 32 / 8);
-	printf("  |-Identification    : %d\n", (unsigned int)tmp->id);
+	printf("  |-Identification   : %d\n", (unsigned int)tmp->id);
 	printf("  |-TTL              : %d\n", (unsigned int)tmp->ttl);
 	printf("  |-Protocol         : %d\n", (unsigned int)tmp->protocol);
 	printf("  |-Checksum         : %d\n", (unsigned int)tmp->check);

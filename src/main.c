@@ -17,5 +17,7 @@ int main(int argc, char *argv[])
 	while (!g_ping.finished)
 		reply_handler();
 
+	print_stats();
+
 	return 0;
 }
