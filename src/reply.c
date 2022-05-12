@@ -42,11 +42,11 @@ void update_stats(t_hdr header)
 
 void reply_handler()
 {
-	t_hdr header = {.icmp.un.echo.id = g_ping.packet.icmp.un.echo.id};
+	t_hdr header;
 	struct iovec iov = {.iov_base = &header, .iov_len = sizeof(header)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
-	if (recvmsg(g_ping.fd, &msg, 0) < 0)
+	if (recvmsg(g_ping.fd, &msg, 0) < 0 || header.icmp.un.echo.id != g_ping.packet.icmp.un.echo.id)
 		return;
 	g_ping.replied = true;
 
