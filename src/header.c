@@ -91,8 +91,8 @@ void display_header(void *address)
 	printf("  |-IP Header Length : %d DWORDS or %d Bytes\n", (unsigned int)tmp->ihl,
 		   (unsigned int)(tmp->ihl * 4));
 	printf("  |-Type Of Service  : %d\n", (unsigned int)tmp->tos);
-	printf("  |-IP Total Length  : %d (%d Bytes)\n", (unsigned int)tmp->tot_len,
-		   (unsigned int)tmp->tot_len / 32 / 8);
+	printf("  |-IP Total Length  : %d (Size of Packet)\n",
+		   (unsigned int)tmp->tot_len);
 	printf("  |-Identification   : %d\n", (unsigned int)tmp->id);
 	printf("  |-TTL              : %d\n", (unsigned int)tmp->ttl);
 	printf("  |-Protocol         : %d\n", (unsigned int)tmp->protocol);
