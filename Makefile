@@ -14,7 +14,7 @@ FILES_SOURCE		=	arg.c \
 COMPILE				=	gcc
 COMPILE				+=	-Wall -Wextra -Werror
 COMPILE				+=	-g3 -ofast
-ARGS				=	google.com -v
+ARGS				=	-v google.com
 
 all: $(NAME)
 

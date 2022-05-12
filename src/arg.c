@@ -6,10 +6,82 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-void usage()
+int	ft_isdigit(int c)
 {
-	printf("Usage: ping [-v] host\n");
+	return (c >= '0' && c <= '9');
+}
+
+bool is_digit(char *str)
+{
+	while (*str)
+	{
+		if (!ft_isdigit(*str))
+			return (false);
+		str++;
+	}
+	return (true);
+}
+
+int ft_atoi(const char *nptr)
+{
+	char sign;
+	ssize_t nbr;
+
+	while (*nptr == ' ' || (*nptr >= 9 && *nptr <= 13))
+		nptr++;
+	sign = 1;
+	if (*nptr == '+' || *nptr == '-')
+		if (*nptr++ == '-')
+			sign = -1;
+	nbr = 0;
+	while (*nptr >= '0' && *nptr <= '9')
+	{
+		nbr = nbr * 10 + (*nptr++ - '0');
+		if (nbr < 0)
+		{
+			if (sign == 1)
+				return (-1);
+			return (0);
+		}
+	}
+	return (sign * nbr);
+}
+
+void usage(char *cmd)
+{
+	printf("Usage: %s [-h] [-t ttl] [-v] host\n", cmd);
 	exit(1);
+}
+
+void options(char **argv[], char *cmd)
+{
+	while (*++**argv)
+		switch (***argv)
+		{
+		case 'v':
+			g_ping.verbose = 1;
+			break;
+		case 't':
+		{
+			if (*(**argv + 1) != '\0')
+			{
+				printf("%s: invalid argument: '%s'\n", cmd, **argv + 1);
+				exit(1);
+			}
+			int ttl = 0;
+			if (*++*argv && is_digit(**argv))
+				ttl = ft_atoi(**argv);
+			if (ttl <= 0 || ttl > 255)
+			{
+				printf("%s: cannot set unicast time-to-live: Invalid argument\n", cmd);
+				exit(1);
+			}
+			g_ping.packet.ip.ttl = ttl;
+			return;
+		}
+		default:
+			usage(cmd);
+		}
 }
 
 void init_host(char *hostname, char *cmd)
@@ -38,27 +110,23 @@ void init_host(char *hostname, char *cmd)
 	freeaddrinfo(res);
 }
 
-void check_args(int argc, char *argv[])
+void check_args(char *argv[])
 {
 	char *cmd = argv[0];
 
-	if (argc < 2)
+	while (*++argv)
+		if (**argv == '-')
+			options(&argv, cmd);
+		else if (!g_ping.hostname && !argv[1])
+			init_host(*argv, cmd);
+		else
+		{
+			printf("%s: usage error: Extranous argument found (%s)\n", cmd, argv[1]);
+			exit(1);
+		}
+	if (!g_ping.hostname)
 	{
 		printf("%s: usage error: Destination address required\n", cmd);
 		exit(1);
 	}
-
-	while (*++argv)
-		if (**argv == '-')
-			switch (*++*argv)
-			{
-			case 'h':
-				usage();
-				break;
-			case 'v':
-				g_ping.verbose = 1;
-				break;
-			}
-		else if (!g_ping.hostname)
-			init_host(*argv, cmd);
 }

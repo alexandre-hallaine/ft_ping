@@ -15,7 +15,7 @@ bool check_reply(t_hdr header)
 	else if (header.icmp.type != ICMP_ECHOREPLY)
 	{
 		if (g_ping.verbose)
-			printf("%d bytes from %s: Received unexpected ICMP\n", header.ip.tot_len / 32 / 8, g_ping.ip);
+			printf("%d bytes from %s: Received unexpected reply\n", header.ip.tot_len / 32 / 8, g_ping.ip);
 		return false;
 	}
 	return ++g_ping.received;
@@ -46,11 +46,11 @@ void reply_handler()
 	struct iovec iov = {.iov_base = &header, .iov_len = sizeof(header)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
-	if (recvmsg(g_ping.fd, &msg, 0) < 0 || header.icmp.un.echo.id != g_ping.packet.icmp.un.echo.id)
+	if (recvmsg(g_ping.fd, &msg, 0) < 0)
 		return;
 	g_ping.replied = true;
 
-	if (!check_reply(header))
+	if (!check_reply(header) || header.icmp.un.echo.id != g_ping.packet.icmp.un.echo.id)
 		return;
 
 	update_stats(header);

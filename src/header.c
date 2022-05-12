@@ -26,7 +26,7 @@ unsigned short checksum(void *address, size_t len)
 	return ((unsigned short)~sum);
 }
 
-void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest)
+void fill_ip_header(struct iphdr *ip, uint16_t size, uint32_t dest)
 {
 	ip->version = 4;					// 4
 	ip->ihl = sizeof(struct iphdr) / 4; // Internet header length in 32-bit words.
@@ -42,7 +42,7 @@ void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest)
 	//   machine in which the datagram is processed, the value in this
 	//   field should be at least as great as the number of gateways which
 	//   this datagram will traverse.
-	ip->ttl = ttl;
+	//ip->ttl = 60; //set by default
 
 	ip->protocol = IPPROTO_ICMP; // ICMP = 1
 

@@ -37,12 +37,12 @@ typedef struct s_ping
 	bool finished;
 } t_ping;
 
-static t_ping g_ping; // static to avoid initialization order fiasco
+t_ping g_ping;
 
-void check_args(int argc, char *argv[]);
+void check_args(char *argv[]);
 
 unsigned short checksum(void *address, size_t len);
-void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest);
+void fill_ip_header(struct iphdr *ip, uint16_t size, uint32_t dest);
 void fill_icmp_header(struct icmphdr *icmp);
 void display_header(void *address);
 

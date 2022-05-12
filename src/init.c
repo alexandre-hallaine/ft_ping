@@ -30,7 +30,10 @@ void init_ping()
 {
 	create_socket();
 
-	fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), TTL, g_ping.dest.sin_addr.s_addr);
+	if (g_ping.packet.ip.ttl == 0)
+		g_ping.packet.ip.ttl = TTL;
+
+	fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), g_ping.dest.sin_addr.s_addr);
 	fill_icmp_header(&g_ping.packet.icmp);
 	g_ping.packet.icmp.checksum = checksum(&g_ping.packet.icmp, sizeof(g_ping.packet.icmp));
 
