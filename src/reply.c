@@ -52,10 +52,13 @@ void reply_handler()
 
 void print_stats()
 {
+	struct timeval now;
+	gettimeofday(&now, NULL);
+
 	printf("\n--- %s ping statistics ---\n", g_ping.hostname);
 	printf("%ld packets transmitted, %ld received, %ld%% packet loss, time %ldms\n",
 		   g_ping.sent, g_ping.received, (g_ping.sent - g_ping.received) * 100 / g_ping.sent,
-		   (g_ping.last.tv_sec - g_ping.first.tv_sec) * 1000 + (g_ping.last.tv_usec - g_ping.first.tv_usec) / 1000);
+		   (now.tv_sec - g_ping.first.tv_sec) * 1000 + (now.tv_usec - g_ping.first.tv_usec) / 1000);
 
 	if (g_ping.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
