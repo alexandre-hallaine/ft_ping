@@ -3,10 +3,11 @@
 #include <string.h>
 #include <signal.h>
 
+t_ping g_ping = {0};
+
 int main(int argc, char *argv[])
 {
 	(void)argc;
-	bzero(&g_ping, sizeof(g_ping));
 
 	check_args(argv);
 	init_ping();

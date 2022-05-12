@@ -37,7 +37,7 @@ typedef struct s_ping
 	bool finished;
 } t_ping;
 
-t_ping g_ping;
+extern t_ping g_ping;
 
 void check_args(char *argv[]);
 
