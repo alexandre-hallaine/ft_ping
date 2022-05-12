@@ -12,6 +12,8 @@ int main(int argc, char *argv[])
 
 	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sigalrm_handler);
+
+	g_ping.replied = true;
 	sigalrm_handler();
 
 	while (!g_ping.finished)
