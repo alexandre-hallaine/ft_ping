@@ -6,7 +6,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-void usage(void)
+void usage()
 {
 	printf("Usage: ping [-v] host\n");
 	exit(1);

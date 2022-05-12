@@ -28,10 +28,10 @@ unsigned short checksum(void *address, size_t len)
 
 void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest)
 {
-	ip->version = 4;			  // 4
+	ip->version = 4;					// 4
 	ip->ihl = sizeof(struct iphdr) / 4; // Internet header length in 32-bit words.
 
-	ip->tos = 0;					  // 0
+	ip->tos = 0;		// 0
 	ip->tot_len = size; // Length of internet header and data in octets.
 
 	// Used in fragmentation https://datatracker.ietf.org/doc/html/rfc792#ref-1

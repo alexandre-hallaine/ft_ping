@@ -25,7 +25,7 @@ typedef struct s_ping
 	size_t sent;
 	size_t received;
 
-	struct timeval first;
+	struct timeval start;
 	struct timeval last;
 
 	double min;
@@ -46,7 +46,7 @@ void fill_ip_header(struct iphdr *ip, uint16_t size, uint8_t ttl, uint32_t dest)
 void fill_icmp_header(struct icmphdr *icmp);
 void display_header(void *address);
 
-void init_ping(void);
+void init_ping();
 
 void sigint_handler();
 void sigalrm_handler();
