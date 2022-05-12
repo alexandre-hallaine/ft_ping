@@ -67,7 +67,7 @@ void fill_icmp_header(struct icmphdr *icmp)
 
 	// If code = 0, an identifier to aid in matching echos and replies,
 	//   may be zero.
-	icmp->un.echo.id = 0;
+	icmp->un.echo.id = getpid();
 
 	// If code = 0, a sequence number to aid in matching echos and
 	//   replies, may be zero.

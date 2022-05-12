@@ -15,7 +15,8 @@ void reply_handler()
 	struct iovec iov = {.iov_base = &header, .iov_len = sizeof(header)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
-	recvmsg(g_ping.fd, &msg, 0);
+	if (recvmsg(g_ping.fd, &msg, 0) < 0)
+		return;
 	g_ping.replied = true;
 
 	if (header.icmp.type == ICMP_TIME_EXCEEDED)
@@ -27,7 +28,7 @@ void reply_handler()
 	else if (header.icmp.type != ICMP_ECHOREPLY)
 	{
 		if (g_ping.verbose)
-			printf("received unexpected ICMP type %d\n", header.icmp.un.echo.id);
+			printf("%d bytes from %s: Received unexpected ICMP\n", header.ip.tot_len / 32 / 8, g_ping.ip);
 		return;
 	}
 	g_ping.received++;
@@ -39,10 +40,7 @@ void reply_handler()
 		   header.ip.tot_len / 32 / 8, g_ping.ip, g_ping.packet.icmp.un.echo.sequence, header.ip.ttl, delta);
 
 	if (g_ping.sent == 1)
-	{
-		g_ping.first = now;
 		g_ping.min = delta;
-	}
 
 	if (delta < g_ping.min)
 		g_ping.min = delta;

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #define TTL 60
 
@@ -27,6 +28,10 @@ void init_ping(void)
 	fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), TTL, g_ping.dest.sin_addr.s_addr);
 	fill_icmp_header(&g_ping.packet.icmp);
 	g_ping.packet.icmp.checksum = checksum(&g_ping.packet.icmp, sizeof(g_ping.packet.icmp));
+
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	g_ping.first = now;
 
 	if (g_ping.verbose)
 		display_header((void *)&g_ping.packet);
