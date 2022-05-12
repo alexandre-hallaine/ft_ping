@@ -37,7 +37,7 @@ typedef struct s_ping
 	bool finished;
 } t_ping;
 
-t_ping g_ping;
+static t_ping g_ping; // static to avoid initialization order fiasco
 
 void check_args(int argc, char *argv[]);
 
