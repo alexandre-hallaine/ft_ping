@@ -3,16 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <netinet/icmp6.h>
 
 bool check_reply(t_hdr header)
 {
+	//display_header((void *)&header);
 	if (header.icmp.type == ICMP_TIME_EXCEEDED)
 	{
 		if (g_ping.verbose)
 			printf("%d bytes from %s: Time to live excceeded\n", header.ip.tot_len / 32 / 8, g_ping.ip);
 		return false;
 	}
-	else if (header.icmp.type != ICMP_ECHOREPLY)
+	else if (header.icmp.type != ICMP_ECHOREPLY && header.icmp.type != ICMP6_ECHO_REPLY)
 	{
 		if (g_ping.verbose)
 			printf("%d bytes from %s: Received unexpected reply\n", header.ip.tot_len / 32 / 8, g_ping.ip);

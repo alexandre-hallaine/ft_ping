@@ -60,9 +60,9 @@ void fill_ip_header(struct iphdr *ip, uint16_t size, uint32_t dest)
 	ip->daddr = dest;
 }
 
-void fill_icmp_header(struct icmphdr *icmp)
+void fill_icmp_header(struct icmphdr *icmp, uint16_t type)
 {
-	icmp->type = ICMP_ECHO; // 8 for echo message;
+	icmp->type = type; // 8 for echo message;
 	icmp->code = 0;			// 0
 
 	// If code = 0, an identifier to aid in matching echos and replies,

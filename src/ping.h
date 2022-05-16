@@ -44,7 +44,7 @@ void check_args(char *argv[]);
 
 unsigned short checksum(void *address, size_t len);
 void fill_ip_header(struct iphdr *ip, uint16_t size, uint32_t dest);
-void fill_icmp_header(struct icmphdr *icmp);
+void fill_icmp_header(struct icmphdr *icmp, uint16_t type);
 void display_header(void *address);
 
 void init_ping();

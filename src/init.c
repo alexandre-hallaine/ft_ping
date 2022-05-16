@@ -5,12 +5,13 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <netinet/icmp6.h>
 
 #define TTL 60
 
 void create_socket()
 {
-	g_ping.fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	g_ping.fd = socket(g_ping.family, SOCK_RAW, g_ping.family == AF_INET ? IPPROTO_ICMP : IPPROTO_ICMPV6);
 	if (g_ping.fd < 0)
 	{
 		printf("Unable to create socket.\n");
@@ -34,7 +35,7 @@ void init_ping()
 	//	g_ping.packet.ip.ttl = TTL;
 
 	//fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), g_ping.dest.sin_addr.s_addr);
-	fill_icmp_header(&g_ping.packet.icmp);
+	fill_icmp_header(&g_ping.packet.icmp, g_ping.family == AF_INET ? ICMP_ECHO : ICMP6_ECHO_REQUEST);
 	g_ping.packet.icmp.checksum = checksum(&g_ping.packet, sizeof(g_ping.packet));
 
 	if (g_ping.verbose)
