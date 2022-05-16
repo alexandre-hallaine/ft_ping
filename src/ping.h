@@ -14,12 +14,13 @@ typedef struct s_hdr
 typedef struct s_ping
 {
 	char *hostname;
-	char ip[INET_ADDRSTRLEN];
+	char ip[INET6_ADDRSTRLEN];
 
 	bool verbose;
 
 	int fd;
-	struct sockaddr_in dest;
+	int family;
+	struct sockaddr dest;
 	t_hdr packet;
 
 	size_t sent;

@@ -61,12 +61,17 @@ void print_stats()
 	struct timeval now;
 	gettimeofday(&now, NULL);
 
-	printf("\n--- %s ping statistics ---\n", g_ping.hostname);
-	printf("%ld packets transmitted, %ld received, %ld%% packet loss, time %ldms\n",
-		   g_ping.sent, g_ping.received, (g_ping.sent - g_ping.received) * 100 / g_ping.sent,
-		   (now.tv_sec - g_ping.start.tv_sec) * 1000 + (now.tv_usec - g_ping.start.tv_usec) / 1000);
+	if (g_ping.sent != 0)
+	{
+		printf("\n--- %s ping statistics ---\n", g_ping.hostname);
+		printf("%ld packets transmitted, %ld received, %ld%% packet loss, time %ldms\n",
+			g_ping.sent, g_ping.received, (g_ping.sent - g_ping.received) * 100 / g_ping.sent,
+			(now.tv_sec - g_ping.start.tv_sec) * 1000 + (now.tv_usec - g_ping.start.tv_usec) / 1000);
 
-	if (g_ping.received > 0)
-		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
-			   g_ping.min, g_ping.sum / g_ping.received, g_ping.max, g_ping.msum / g_ping.received);
+		if (g_ping.received > 0)
+			printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
+				g_ping.min, g_ping.sum / g_ping.received, g_ping.max, g_ping.msum / g_ping.received);
+	}
+	else
+		printf("\n");
 }

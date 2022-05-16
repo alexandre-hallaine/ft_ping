@@ -61,7 +61,7 @@ void options(char **argv[], char *cmd)
 		case 'v':
 			g_ping.verbose = 1;
 			break;
-		case 't':
+		/*case 't':
 		{
 			if (*(**argv + 1) != '\0')
 			{
@@ -78,7 +78,7 @@ void options(char **argv[], char *cmd)
 			}
 			g_ping.packet.ip.ttl = ttl;
 			return;
-		}
+		}*/
 		default:
 			usage(cmd);
 		}
@@ -90,7 +90,7 @@ void init_host(char *hostname, char *cmd)
 
 	struct addrinfo hints;
 	bzero(&hints, sizeof(hints));
-	hints.ai_family = AF_INET;
+	//hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_RAW;
 	hints.ai_protocol = IPPROTO_ICMP;
 
@@ -101,12 +101,16 @@ void init_host(char *hostname, char *cmd)
 		exit(1);
 	}
 
-	g_ping.dest.sin_family = AF_INET;
-	g_ping.dest.sin_port = 0;
-	g_ping.dest.sin_addr.s_addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr.s_addr;
+	g_ping.family = res->ai_family;
+	memcpy(&g_ping.dest, res->ai_addr, res->ai_addrlen);
 
-	inet_ntop(AF_INET, &g_ping.dest.sin_addr, g_ping.ip, INET_ADDRSTRLEN);
+	if (g_ping.family == AF_INET)
+		inet_ntop(g_ping.family, &((struct sockaddr_in *)&g_ping.dest)->sin_addr, g_ping.ip, sizeof(g_ping.ip));
+	else
+		inet_ntop(g_ping.family, &((struct sockaddr_in6 *)&g_ping.dest)->sin6_addr, g_ping.ip, sizeof(g_ping.ip));
 
+	//print ip
+	printf("IP: %s\n", g_ping.ip);
 	freeaddrinfo(res);
 }
 

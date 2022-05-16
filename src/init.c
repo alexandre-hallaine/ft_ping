@@ -18,8 +18,8 @@ void create_socket()
 	}
 
 	struct timeval timeout = {1, 0};
-	if (setsockopt(g_ping.fd, IPPROTO_IP, IP_HDRINCL, &(int){1}, sizeof(int)) < 0 ||
-		setsockopt(g_ping.fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0)
+	//if (setsockopt(g_ping.fd, IPPROTO_IP, IP_HDRINCL, &(int){1}, sizeof(int)) < 0 ||
+	if (setsockopt(g_ping.fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0)
 	{
 		printf("Unable to set socket options.\n");
 		exit(1);
@@ -30,12 +30,12 @@ void init_ping()
 {
 	create_socket();
 
-	if (g_ping.packet.ip.ttl == 0)
-		g_ping.packet.ip.ttl = TTL;
+	//if (g_ping.packet.ip.ttl == 0)
+	//	g_ping.packet.ip.ttl = TTL;
 
-	fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), g_ping.dest.sin_addr.s_addr);
+	//fill_ip_header(&g_ping.packet.ip, sizeof(g_ping.packet), g_ping.dest.sin_addr.s_addr);
 	fill_icmp_header(&g_ping.packet.icmp);
-	g_ping.packet.icmp.checksum = checksum(&g_ping.packet.icmp, sizeof(g_ping.packet.icmp));
+	g_ping.packet.icmp.checksum = checksum(&g_ping.packet, sizeof(g_ping.packet));
 
 	if (g_ping.verbose)
 		display_header((void *)&g_ping.packet);
