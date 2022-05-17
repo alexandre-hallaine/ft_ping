@@ -14,7 +14,7 @@
 
 typedef struct s_ping
 {
-	char hostname[256];
+	char *hostname;
 	char ip[INET6_ADDRSTRLEN];
 	struct sockaddr addr;
 	int socket;

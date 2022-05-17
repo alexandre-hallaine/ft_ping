@@ -52,17 +52,17 @@ void recv_msg()
 
 	if (recvmsg(g_ping.socket, &msg, 0) < 0)
 		return ;
+
+	printf("64 bytes from %s (%s): icmp_seq=%d\n", g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence);
 	g_ping.reply = 1;
 	g_ping.received++;
 }
 
 void sigalrm_handler()
 {
-	ping();
 	if (g_ping.reply == 0 && g_ping.sent > 0)
 		printf("No reply from %s\n", g_ping.hostname);
-	else if (g_ping.reply == 1 && g_ping.sent > 0)
-		printf("64 bytes from %s (%s): icmp_seq=%d\n", g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence);
+	ping();
 	++g_ping.icmp.un.echo.sequence;
 	--g_ping.icmp.checksum;
 	g_ping.reply = 0;
@@ -93,7 +93,7 @@ int main(int ac, char **av)
 		return (1);
 	}
 	g_ping.res = res;
-	strcpy(g_ping.hostname, av[1]);
+	g_ping.hostname = av[1];
 
 	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sigalrm_handler);
