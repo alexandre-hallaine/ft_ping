@@ -38,6 +38,8 @@ typedef struct s_ping
 
 	int sent;
 	int reply;
+
+	int verbose;
 } t_ping;
 
 extern t_ping g_ping;
