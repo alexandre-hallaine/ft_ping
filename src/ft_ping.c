@@ -2,29 +2,18 @@
 
 t_ping g_ping = {0};
 
-unsigned short checksum(void *address, size_t len)
+// https://www.alpharithms.com/internet-checksum-calculation-steps-044921/
+unsigned short checksum(unsigned short *address, size_t len)
 {
-	unsigned short *src;
-	unsigned long sum;
-
-	src = (unsigned short *)address;
-	sum = 0;
-	while (len > 1)
-	{
-		sum += *src;
-		src++;
-		len -= sizeof(short);
-	}
-	if (len)
-		sum += *(unsigned char *)src;
-	sum = (sum >> 16) + (sum & 0xffff);
-	sum += (sum >> 16);
-	return ((unsigned short)~sum);
+	unsigned short sum = 0;
+	while (len -= sizeof(short))
+		sum += *address++;
+	return (~sum);
 }
 
 void sigint_handler()
 {
-	g_ping.done= 1;
+	g_ping.done = 1;
 	freeaddrinfo(g_ping.res);
 	if (g_ping.sent > 0)
 	{
@@ -39,21 +28,40 @@ void ping()
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 	{
 		printf("sendto: %s\n", strerror(errno));
-		return ;
+		return;
 	}
 	g_ping.sent++;
 }
 
 void recv_msg()
 {
-	char buffer[512];
+	if (g_ping.reply == 1)
+		return;
+
+	t_hdr buffer;
 	struct iovec iov = {.iov_base = &buffer, .iov_len = sizeof(buffer)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
 	if (recvmsg(g_ping.socket, &msg, 0) < 0)
-		return ;
+		return;
 
-	printf("64 bytes from %s (%s): icmp_seq=%d\n", g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence);
+	unsigned short len;
+	unsigned char ttl;
+	if (g_ping.res->ai_family == AF_INET)
+	{
+		if (buffer.ip.v4.saddr != ((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr.s_addr)
+			return;
+		len = buffer.ip.v4.tot_len;
+		ttl = buffer.ip.v4.ttl;
+	}
+	else
+	{
+		if (memcmp(buffer.ip.v6.ip6_src.s6_addr, ((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr.s6_addr, sizeof(buffer.ip.v6.ip6_src.s6_addr)) == 0)
+			return;
+		len = buffer.ip.v6.ip6_plen;
+		ttl = buffer.ip.v6.ip6_hlim;
+	}
+	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", len / 32 / 8, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl);
 	g_ping.reply = 1;
 	g_ping.received++;
 }
@@ -62,9 +70,9 @@ void sigalrm_handler()
 {
 	if (g_ping.reply == 0 && g_ping.sent > 0)
 		printf("No reply from %s\n", g_ping.hostname);
-	ping();
 	++g_ping.icmp.un.echo.sequence;
 	--g_ping.icmp.checksum;
+	ping();
 	g_ping.reply = 0;
 	alarm(1);
 }
@@ -97,21 +105,22 @@ int main(int ac, char **av)
 
 	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sigalrm_handler);
-	
+
 	if ((g_ping.socket = socket(g_ping.res->ai_family, g_ping.res->ai_socktype, g_ping.res->ai_family == AF_INET ? IPPROTO_ICMP : IPPROTO_ICMPV6)) < 0)
 	{
 		printf("socket: %s\n", strerror(errno));
 		return (1);
 	}
 
+	g_ping.icmp.un.echo.id = getpid();
 	g_ping.icmp.type = g_ping.res->ai_family == AF_INET ? ICMP_ECHO : ICMP6_ECHO_REQUEST;
-	g_ping.icmp.checksum = g_ping.res->ai_family == AF_INET ?  checksum((unsigned short *)&g_ping.icmp, sizeof(g_ping.icmp)) : g_ping.icmp.checksum;
+	g_ping.icmp.checksum = g_ping.res->ai_family == AF_INET ? checksum((unsigned short *)&g_ping.icmp, sizeof(g_ping.icmp)) : g_ping.icmp.checksum;
 
 	inet_ntop(g_ping.res->ai_family, g_ping.res->ai_family == AF_INET ? (void *)&((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr : (void *)&((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr, g_ping.ip, sizeof(g_ping.ip));
 
-	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname,  g_ping.ip, sizeof(struct icmphdr) + sizeof (struct iphdr));
+	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname, g_ping.ip, sizeof(struct icmphdr) + sizeof(struct iphdr));
 	sigalrm_handler();
-	
+
 	while (g_ping.done == 0)
 		recv_msg();
 
