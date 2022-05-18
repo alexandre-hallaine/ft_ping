@@ -99,31 +99,82 @@ void sigalrm_handler()
 	alarm(1);
 }
 
-int main(int ac, char **av)
+void init_host(char *hostname)
 {
-	if (getuid() != 0)
-	{
-		printf("You must be root to run this program\n");
-		return (1);
-	}
-	if (ac != 2)
-	{
-		printf("usage: ./ft_ping [hostname]\n");
-		return (1);
-	}
-
+	g_ping.hostname = hostname;
 	struct addrinfo hints = {0};
 	hints.ai_protocol = IPPROTO_ICMP;
 	hints.ai_socktype = SOCK_RAW;
 
 	struct addrinfo *res;
-	if (getaddrinfo(av[1], NULL, &hints, &res))
+	if (getaddrinfo(g_ping.hostname, NULL, &hints, &res))
 	{
 		printf("getaddrinfo: %s\n", strerror(errno));
-		return (1);
+		exit(1);
 	}
 	g_ping.res = res;
-	g_ping.hostname = av[1];
+}
+
+void options(char **argv[])
+{
+	while (*++**argv)
+		switch (***argv)
+		{
+		case 'v':
+			g_ping.verbose = 1;
+			break;
+		/*case 't':
+		{
+			if (*(**argv + 1) != '\0')
+			{
+				printf("%s: invalid argument: '%s'\n", cmd, **argv + 1);
+				exit(1);
+			}
+			int ttl = 0;
+			if (*++*argv && is_digit(**argv))
+				ttl = ft_atoi(**argv);
+			if (ttl <= 0 || ttl > 255)
+			{
+				printf("%s: cannot set unicast time-to-live: Invalid argument\n", cmd);
+				exit(1);
+			}
+			g_ping.packet.ip.ttl = ttl;
+			return;
+		}*/
+		default:
+			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
+			exit(1);
+		}
+}
+
+void check_args(char *argv[])
+{
+	while (*++argv)
+		if (**argv == '-')
+			options(&argv);
+		else if (!g_ping.hostname && !argv[1])
+			init_host(*argv);
+		else
+		{
+			printf("ft_ping: usage error: Extranous argument found (%s)\n", argv[1]);
+			exit(1);
+		}
+	if (!g_ping.hostname)
+	{
+		printf("ft_ping: usage error: Destination address required\n");
+		exit(1);
+	}
+}
+
+int main(int ac, char **av)
+{
+	(void)ac;
+	if (getuid() != 0)
+	{
+		printf("You must be root to run this program\n");
+		return (1);
+	}
+	check_args(av);
 
 	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sigalrm_handler);
