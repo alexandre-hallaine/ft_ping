@@ -13,16 +13,18 @@
 #include <stdlib.h>
 #include <netinet/ip6.h>
 
-typedef struct s_hdr
+typedef union s_recv
 {
-	union
+	struct
 	{
-		struct iphdr v4;
-		struct ip6_hdr v6;
-	} ip;
-	struct icmphdr icmp;
-
-} t_hdr;
+		struct iphdr ip;
+		struct icmphdr icmp;
+	} v4;
+	struct
+	{
+		struct icmp6_hdr icmp;
+	} v6;
+} t_recv;
 
 typedef struct s_ping
 {

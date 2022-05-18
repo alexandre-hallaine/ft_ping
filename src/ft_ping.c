@@ -33,14 +33,36 @@ void ping()
 	g_ping.sent++;
 }
 
+void *ancillary_data(struct msghdr msg, int len, int level)
+{
+	for (struct cmsghdr *cmsgptr = CMSG_FIRSTHDR(&msg);
+		 cmsgptr != NULL;
+		 cmsgptr = CMSG_NXTHDR(&msg, cmsgptr))
+	{
+		if (cmsgptr->cmsg_len == 0)
+			break;
+
+		if (cmsgptr->cmsg_level == len && cmsgptr->cmsg_type == level)
+			return CMSG_DATA(cmsgptr);
+	}
+	return NULL;
+}
+
 void recv_msg()
 {
 	if (g_ping.reply == 1)
 		return;
 
-	t_hdr buffer;
+	t_recv buffer;
 	struct iovec iov = {.iov_base = &buffer, .iov_len = sizeof(buffer)};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
+
+	if (g_ping.res->ai_family == AF_INET6)
+	{
+		char data[64];
+		msg.msg_control = data;
+		msg.msg_controllen = sizeof(data);
+	}
 
 	if (recvmsg(g_ping.socket, &msg, 0) < 0)
 		return;
@@ -49,19 +71,19 @@ void recv_msg()
 	unsigned char ttl;
 	if (g_ping.res->ai_family == AF_INET)
 	{
-		if (buffer.ip.v4.saddr != ((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr.s_addr)
+		if (buffer.v4.ip.saddr != ((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr.s_addr)
 			return;
-		len = buffer.ip.v4.tot_len;
-		ttl = buffer.ip.v4.ttl;
+		len = buffer.v4.ip.tot_len / 32 / 8;
+		ttl = buffer.v4.ip.ttl;
 	}
 	else
 	{
-		if (memcmp(buffer.ip.v6.ip6_src.s6_addr, ((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr.s6_addr, sizeof(buffer.ip.v6.ip6_src.s6_addr)) == 0)
-			return;
-		len = buffer.ip.v6.ip6_plen;
-		ttl = buffer.ip.v6.ip6_hlim;
+		// if (memcmp(buffer.v6.ip.ip6_src.s6_addr, ((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr.s6_addr, sizeof(buffer.v6.ip.ip6_src.s6_addr)) == 0)
+		// 	return;
+		len = sizeof(buffer.v6.icmp);
+		ttl = *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
 	}
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", len / 32 / 8, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl);
+	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl);
 	g_ping.reply = 1;
 	g_ping.received++;
 }
@@ -109,6 +131,14 @@ int main(int ac, char **av)
 	if ((g_ping.socket = socket(g_ping.res->ai_family, g_ping.res->ai_socktype, g_ping.res->ai_family == AF_INET ? IPPROTO_ICMP : IPPROTO_ICMPV6)) < 0)
 	{
 		printf("socket: %s\n", strerror(errno));
+		return (1);
+	}
+
+	int on = 1;
+	if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) < 0 ||
+		setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
+	{
+		printf("setsockopt: %s\n", strerror(errno));
 		return (1);
 	}
 
