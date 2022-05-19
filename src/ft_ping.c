@@ -83,6 +83,20 @@ void recv_msg()
 		len = sizeof(buffer.v6.icmp);
 		ttl = *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
 	}
+
+	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
+	{
+		printf("id: %d\n", buffer.v4.icmp.un.echo.id);
+		if (g_ping.verbose)
+			printf("%d bytes from %s: Time to live excceeded\n", 42, g_ping.ip);
+		return;
+	}
+	else if (buffer.v4.icmp.type != ICMP_ECHOREPLY && buffer.v6.icmp.icmp6_type != ICMP6_ECHO_REPLY)
+	{
+		if (g_ping.verbose)
+			printf("%d bytes from %s: Unknow ICMP type\n", len, g_ping.ip);
+		return;
+	}
 	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl);
 	g_ping.reply = 1;
 	g_ping.received++;
@@ -109,7 +123,7 @@ void init_host(char *hostname)
 	struct addrinfo *res;
 	if (getaddrinfo(g_ping.hostname, NULL, &hints, &res))
 	{
-		printf("getaddrinfo: %s\n", strerror(errno));
+		printf("ft_ping: getaddrinfo: %s\n", strerror(errno));
 		exit(1);
 	}
 	g_ping.res = res;
@@ -171,7 +185,7 @@ int main(int ac, char **av)
 	(void)ac;
 	if (getuid() != 0)
 	{
-		printf("You must be root to run this program\n");
+		printf("ft_ping: usage error: You must be root to run this program\n");
 		return (1);
 	}
 	check_args(av);
@@ -181,16 +195,35 @@ int main(int ac, char **av)
 
 	if ((g_ping.socket = socket(g_ping.res->ai_family, g_ping.res->ai_socktype, g_ping.res->ai_family == AF_INET ? IPPROTO_ICMP : IPPROTO_ICMPV6)) < 0)
 	{
-		printf("socket: %s\n", strerror(errno));
+		printf("ft_ping: socket: %s\n", strerror(errno));
 		return (1);
 	}
 
-	int on = 1;
-	if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) < 0 ||
-		setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
+	struct timeval timeout = {1, 0};
+	if (setsockopt(g_ping.socket, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0)
 	{
-		printf("setsockopt: %s\n", strerror(errno));
+		printf("ft_ping: setsockopt: %s\n", strerror(errno));
 		return (1);
+	}
+
+	if (g_ping.res->ai_family == AF_INET)
+	{
+		int ttl = 1;
+		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0)
+		{
+			printf("ft_ping: setsockopt: %s\n", strerror(errno));
+			return (1);
+		}
+	}
+	else
+	{
+		int on = 1;
+		if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) < 0 ||
+			setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
+		{
+			printf("ft_ping: setsockopt: %s\n", strerror(errno));
+			// return (1);
+		}
 	}
 
 	g_ping.icmp.un.echo.id = getpid();
@@ -207,3 +240,7 @@ int main(int ac, char **av)
 
 	return (0);
 }
+
+// check on ipv6 if ping recevied is the same as the one sent
+// TTL error find flag uid
+// check time n do math
