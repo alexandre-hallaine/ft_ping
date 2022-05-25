@@ -2,6 +2,31 @@
 
 t_ping g_ping = {0};
 
+void ft_exit(char *cmd, char *msg)
+{
+	printf("%s: %s: %s\n", g_ping.cmd, cmd, msg);
+	exit(EXIT_FAILURE);
+}
+
+int is_digit(char *str)
+{
+	while (*str)
+	{
+		if (!(*str >= '0' && *str <= '9'))
+			return (0);
+		str++;
+	}
+	return (1);
+}
+
+int	ft_atoi(const char *nptr)
+{
+    ssize_t	nbr = 0;
+    while (*nptr >= '0' && *nptr <= '9')
+        nbr = nbr * 10 + (*nptr++ - '0');
+    return (nbr);
+}
+
 // https://www.alpharithms.com/internet-checksum-calculation-steps-044921/
 unsigned short checksum(unsigned short *address, size_t len)
 {
@@ -16,21 +41,16 @@ void sigint_handler()
 	g_ping.done = 1;
 	freeaddrinfo(g_ping.res);
 	if (g_ping.sent > 0)
-	{
-		printf("--- %s ping statistics ---\n", g_ping.hostname);
-		printf("%d packets transmitted, %d received, %d%% packet loss\n", g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent));
-	}
+		printf("--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent));
 	exit(1);
 }
 
 void ping()
 {
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
-	{
-		printf("sendto: %s\n", strerror(errno));
-		return;
-	}
+		ft_exit("sendto", "Could not send packet");
 	g_ping.sent++;
+	g_ping.reply = 0;
 }
 
 void *ancillary_data(struct msghdr msg, int len, int level)
@@ -64,52 +84,43 @@ void recv_msg()
 		msg.msg_controllen = sizeof(data);
 	}
 
-	if (recvmsg(g_ping.socket, &msg, 0) < 0)
+	if ((g_ping.len = recvmsg(g_ping.socket, &msg, 0)) < 0)
+		return;
+	g_ping.reply = 1;
+	g_ping.ttl_reply = g_ping.res->ai_family == AF_INET ? buffer.v4.ip.ttl : *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
+
+
+	// if wrong id (exclude ICMP_TIME_EXCEEDED / ICMP6_TIME_EXCEEDED because it is filled with 0)
+	if ((g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.icmp6_id) && (buffer.v4.icmp.type != ICMP_TIME_EXCEEDED && buffer.v6.icmp.icmp6_type != ICMP6_TIME_EXCEEDED))
 		return;
 
-	unsigned short len;
-	unsigned char ttl;
-	if (g_ping.res->ai_family == AF_INET)
-	{
-		if (buffer.v4.ip.saddr != ((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr.s_addr)
-			return;
-		len = buffer.v4.ip.tot_len / 32 / 8;
-		ttl = buffer.v4.ip.ttl;
-	}
-	else
-	{
-		// if (memcmp(buffer.v6.ip.ip6_src.s6_addr, ((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr.s6_addr, sizeof(buffer.v6.ip.ip6_src.s6_addr)) == 0)
-		// 	return;
-		len = sizeof(buffer.v6.icmp);
-		ttl = *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
-	}
-
+	// check for ICMP_TIME_EXCEEDED / ICMP6_TIME_EXCEEDED
 	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
 	{
-		printf("id: %d\n", buffer.v4.icmp.un.echo.id);
 		if (g_ping.verbose)
-			printf("%d bytes from %s: Time to live excceeded\n", 42, g_ping.ip);
+			printf("From %s (%s): Time to live excceeded\n", g_ping.hostname, g_ping.ip);
 		return;
-	}
+	} // check for ICMP_ECHO_REPLY
 	else if (buffer.v4.icmp.type != ICMP_ECHOREPLY && buffer.v6.icmp.icmp6_type != ICMP6_ECHO_REPLY)
 	{
 		if (g_ping.verbose)
-			printf("%d bytes from %s: Unknow ICMP type\n", len, g_ping.ip);
+			printf("From %s (%s): Unknow ICMP type\n", g_ping.hostname, g_ping.ip);
 		return;
 	}
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl);
-	g_ping.reply = 1;
+
 	g_ping.received++;
+	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply);
 }
 
 void sigalrm_handler()
 {
-	if (g_ping.reply == 0 && g_ping.sent > 0)
+	if (g_ping.reply == 0 && g_ping.sent > 0 && g_ping.verbose)
 		printf("No reply from %s\n", g_ping.hostname);
+
 	++g_ping.icmp.un.echo.sequence;
 	--g_ping.icmp.checksum;
+	
 	ping();
-	g_ping.reply = 0;
 	alarm(1);
 }
 
@@ -122,117 +133,86 @@ void init_host(char *hostname)
 
 	struct addrinfo *res;
 	if (getaddrinfo(g_ping.hostname, NULL, &hints, &res))
-	{
-		printf("ft_ping: getaddrinfo: %s\n", strerror(errno));
-		exit(1);
-	}
+		ft_exit("getaddrinfo", "Could not resolve hostname");
 	g_ping.res = res;
 }
 
-void options(char **argv[])
+void options(char ***av)
 {
-	while (*++**argv)
-		switch (***argv)
+	while (*++**av)
+		switch (***av)
 		{
 		case 'v':
 			g_ping.verbose = 1;
 			break;
-		/*case 't':
+		case 't':
 		{
-			if (*(**argv + 1) != '\0')
-			{
-				printf("%s: invalid argument: '%s'\n", cmd, **argv + 1);
-				exit(1);
-			}
-			int ttl = 0;
-			if (*++*argv && is_digit(**argv))
-				ttl = ft_atoi(**argv);
-			if (ttl <= 0 || ttl > 255)
-			{
-				printf("%s: cannot set unicast time-to-live: Invalid argument\n", cmd);
-				exit(1);
-			}
-			g_ping.packet.ip.ttl = ttl;
+			if (*(**av + 1) != '\0')
+				ft_exit("usage error", "Invalid argument for -t");
+			if (*++*av && is_digit(**av))
+				g_ping.ttl = ft_atoi(**av);
+			if (g_ping.ttl <= 0 || g_ping.ttl > 255)
+				ft_exit("usage error", "Invalid TTL");
 			return;
-		}*/
+		}
 		default:
 			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
 			exit(1);
 		}
 }
 
-void check_args(char *argv[])
+void check_args(char **av)
 {
-	while (*++argv)
-		if (**argv == '-')
-			options(&argv);
-		else if (!g_ping.hostname && !argv[1])
-			init_host(*argv);
+	if (getuid() != 0)
+		ft_exit("usage error", "You must be root to run this program");
+
+	while (*++av)
+		if (**av == '-')
+			options(&av);
+		else if (!g_ping.hostname && !av[1])
+			init_host(*av);
 		else
-		{
-			printf("ft_ping: usage error: Extranous argument found (%s)\n", argv[1]);
-			exit(1);
-		}
+			ft_exit("usage error", "Extranous argument found");
 	if (!g_ping.hostname)
-	{
-		printf("ft_ping: usage error: Destination address required\n");
-		exit(1);
-	}
+		ft_exit("usage error", "No hostname specified");
 }
 
 int main(int ac, char **av)
 {
 	(void)ac;
-	if (getuid() != 0)
-	{
-		printf("ft_ping: usage error: You must be root to run this program\n");
-		return (1);
-	}
+	g_ping.cmd = av[0];
 	check_args(av);
+
+	int on = 1;
+	g_ping.ttl = g_ping.ttl == 0 ? 128 : g_ping.ttl;
 
 	signal(SIGINT, sigint_handler);
 	signal(SIGALRM, sigalrm_handler);
 
 	if ((g_ping.socket = socket(g_ping.res->ai_family, g_ping.res->ai_socktype, g_ping.res->ai_family == AF_INET ? IPPROTO_ICMP : IPPROTO_ICMPV6)) < 0)
-	{
-		printf("ft_ping: socket: %s\n", strerror(errno));
-		return (1);
-	}
+		ft_exit("socket", "Cannot create socket");
 
 	struct timeval timeout = {1, 0};
 	if (setsockopt(g_ping.socket, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0)
-	{
-		printf("ft_ping: setsockopt: %s\n", strerror(errno));
-		return (1);
-	}
+		ft_exit("setsockopt", "Cannot set socket options");
 
 	if (g_ping.res->ai_family == AF_INET)
 	{
-		int ttl = 1;
-		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0)
-		{
-			printf("ft_ping: setsockopt: %s\n", strerror(errno));
-			return (1);
-		}
+		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
+			ft_exit("setsockopt", "Cannot set socket options");
 	}
 	else
-	{
-		int on = 1;
 		if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) < 0 ||
 			setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
-		{
-			printf("ft_ping: setsockopt: %s\n", strerror(errno));
-			// return (1);
-		}
-	}
+				ft_exit("setsockopt", "Cannot set socket options");
 
 	g_ping.icmp.un.echo.id = getpid();
 	g_ping.icmp.type = g_ping.res->ai_family == AF_INET ? ICMP_ECHO : ICMP6_ECHO_REQUEST;
 	g_ping.icmp.checksum = g_ping.res->ai_family == AF_INET ? checksum((unsigned short *)&g_ping.icmp, sizeof(g_ping.icmp)) : g_ping.icmp.checksum;
-
 	inet_ntop(g_ping.res->ai_family, g_ping.res->ai_family == AF_INET ? (void *)&((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr : (void *)&((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr, g_ping.ip, sizeof(g_ping.ip));
 
 	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname, g_ping.ip, sizeof(struct icmphdr) + sizeof(struct iphdr));
+
 	sigalrm_handler();
 
 	while (g_ping.done == 0)
@@ -240,7 +220,3 @@ int main(int ac, char **av)
 
 	return (0);
 }
-
-// check on ipv6 if ping recevied is the same as the one sent
-// TTL error find flag uid
-// check time n do math
