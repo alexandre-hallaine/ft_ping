@@ -10,13 +10,9 @@ void ft_exit(char *cmd, char *msg)
 
 int is_digit(char *str)
 {
-	while (*str)
-	{
-		if (!(*str >= '0' && *str <= '9'))
-			return (0);
+	while ((*str >= '0' && *str <= '9'))
 		str++;
-	}
-	return (1);
+	return !*str;
 }
 
 int	ft_atoi(const char *nptr)
@@ -49,6 +45,7 @@ void ping()
 {
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 		ft_exit("sendto", "Could not send packet");
+	gettimeofday(&g_ping.last, NULL);
 	g_ping.sent++;
 	g_ping.reply = 0;
 }
@@ -108,8 +105,11 @@ void recv_msg()
 		return;
 	}
 
+	struct timeval now;
+	gettimeofday(&now, NULL);
+
 	g_ping.received++;
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=42.42 ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply);
+	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply, (now.tv_sec - g_ping.last.tv_sec) * 1000 + (now.tv_usec - g_ping.last.tv_usec) / 1000.0);
 }
 
 void sigalrm_handler()

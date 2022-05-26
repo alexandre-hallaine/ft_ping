@@ -26,11 +26,12 @@ $(DIRECTORY_OBJECT)/%.o: $(DIRECTORY_SOURCE)/%.c $(FILES_CHECK:%=$(DIRECTORY_SOU
 $(NAME): $(DIRECTORY_OBJECT) $(FILES_SOURCE:%.c=$(DIRECTORY_OBJECT)/%.o)
 	@printf "\e[1;33mLinking: \e[0m$@\n"
 	$(COMPILE) -o $@ $(FILES_SOURCE:%.c=$(DIRECTORY_OBJECT)/%.o)
-	@printf "\e[1F\e[2K\r\e[1;32mCompilation successful :D\e[0m\n"
+	@printf "\e[1F\e[2K\r\e[1;32mCompilation successful c:\e[0m\n"
 
 run: all
 	@printf "\e[1;34mRunning...\e[0m\n"
 	$(RUN) ./$(NAME) $(ARGS)
+	@printf "\e[1;34mNo errors found :D\e[0m\n"
 
 clean:
 	@printf "\e[1;31mCleaning: \e[0m$(DIRECTORY_OBJECT)\n"

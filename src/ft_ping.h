@@ -9,6 +9,7 @@
 #include <netinet/icmp6.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 typedef union s_recv
 {
@@ -46,6 +47,9 @@ typedef struct s_ping
 	int ttl;
 
 	char *cmd;
+
+	struct timeval begin;
+	struct timeval last;
 } t_ping;
 
 extern t_ping g_ping;
