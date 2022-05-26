@@ -38,9 +38,11 @@ typedef struct s_ping
 	int received;
 	int sent;
 	int reply;
-	int error;
 
 	int verbose;
+	int audible;
+	long long int count;
+	int quiet;
 
 	int len;
 	int ttl_reply;

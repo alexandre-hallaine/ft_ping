@@ -63,7 +63,6 @@ void options(char ***av)
 			g_ping.verbose = 1;
 			break;
 		case 't':
-		{
 			if (*(**av + 1) != '\0')
 				ft_exit("usage error", "Invalid argument for -t");
 			if (*++*av && is_digit(**av))
@@ -71,7 +70,20 @@ void options(char ***av)
 			if (g_ping.ttl <= 0 || g_ping.ttl > 255)
 				ft_exit("usage error", "Invalid TTL");
 			return;
-		}
+		case 'a':
+			g_ping.audible = 1;
+			break;
+		case 'c':
+			if (*(**av + 1) != '\0')
+				ft_exit("usage error", "Invalid argument for -c");
+			if (*++*av && is_digit(**av))
+				g_ping.count = ft_atoi(**av);
+			if (g_ping.count <= 0 || g_ping.count > 9223372036854775807)
+				ft_exit("usage error", "Value out of range");
+			return;
+		case 'q':
+			g_ping.quiet = 1;
+			break;
 		default:
 			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
 			exit(1);
@@ -113,7 +125,7 @@ void sigint_handler()
 	freeaddrinfo(g_ping.res);
 
 	if (g_ping.sent > 0)
-		printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss, time %.3fms\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent), millis(g_ping.begin));
+		printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss, time %.0fms\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent), millis(g_ping.begin));
 
 	if (g_ping.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", 0.0, 0.0, 0.0, 0.0);
@@ -138,6 +150,9 @@ void sigalrm_handler()
 
 	ping();
 	alarm(1);
+	// could wait for 1 second here
+	if (g_ping.count > 0 && g_ping.sent >= g_ping.count)
+		sigint_handler();
 }
 
 void socket_init()
@@ -202,6 +217,10 @@ void recv_msg()
 	}
 
 	g_ping.received++;
+	if (g_ping.quiet)
+		return;
+	if (g_ping.audible)
+		printf("\a");
 	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply, millis(g_ping.last));
 }
 
@@ -212,6 +231,7 @@ int main(int ac, char **av)
 
 	check_args(av);
 	g_ping.ttl = g_ping.ttl == 0 ? 64 : g_ping.ttl;
+	g_ping.count = g_ping.count == 0 ? -1 : g_ping.count;
 	socket_init();
 
 	signal(SIGINT, sigint_handler);
