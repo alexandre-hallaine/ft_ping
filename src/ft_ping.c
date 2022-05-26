@@ -2,6 +2,38 @@
 
 t_ping g_ping = {0};
 
+void display_header(void *address)
+{
+	struct iphdr *tmp = (void *)address;
+	// display the IP header
+	printf("\nIP header:\n");
+	printf("  |-IP Version       : %d\n", (unsigned int)tmp->version);
+	printf("  |-IP Header Length : %d DWORDS or %d Bytes\n", (unsigned int)tmp->ihl,
+		   (unsigned int)(tmp->ihl * 4));
+	printf("  |-Type Of Service  : %d\n", (unsigned int)tmp->tos);
+	printf("  |-IP Total Length  : %d (Size of Packet)\n",
+		   (unsigned int)tmp->tot_len);
+	printf("  |-Identification   : %d\n", (unsigned int)tmp->id);
+	printf("  |-TTL              : %d\n", (unsigned int)tmp->ttl);
+	printf("  |-Protocol         : %d\n", (unsigned int)tmp->protocol);
+	printf("  |-Checksum         : %d\n", (unsigned int)tmp->check);
+	struct in_addr addr = {.s_addr = tmp->saddr};
+	printf("  |-Source IP        : %s\n", inet_ntoa(addr));
+	addr.s_addr = tmp->daddr;
+	printf("  |-Destination IP   : %s\n", inet_ntoa(addr));
+
+	struct icmphdr *icmp = (void *)address + sizeof(struct iphdr);
+	// display the ICMP header
+	printf("\nICMP header:\n");
+	printf("  |-Type             : %d\n", (unsigned int)icmp->type);
+	printf("  |-Code             : %d\n", (unsigned int)icmp->code);
+	printf("  |-Checksum         : %d\n", (unsigned int)icmp->checksum);
+	printf("  |-Identifier       : %d\n", (unsigned int)icmp->un.echo.id);
+	printf("  |-Sequence Number  : %d\n", (unsigned int)icmp->un.echo.sequence);
+
+	printf("\n");
+}
+
 void ft_exit(char *cmd, char *msg)
 {
 	printf("%s: %s: %s\n", g_ping.cmd, cmd, msg);
@@ -133,6 +165,8 @@ void sigint_handler()
 
 void ping()
 {
+	if (g_ping.done == 1)
+		return;
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 		ft_exit("sendto", "Could not send packet");
 	gettimeofday(&g_ping.last, NULL);
@@ -148,11 +182,11 @@ void sigalrm_handler()
 	++g_ping.icmp.un.echo.sequence;
 	--g_ping.icmp.checksum;
 
-	ping();
-	alarm(1);
-	// could wait for 1 second here
 	if (g_ping.count > 0 && g_ping.sent >= g_ping.count)
 		sigint_handler();
+	ping();
+	alarm(1);
+
 }
 
 void socket_init()
@@ -222,6 +256,8 @@ void recv_msg()
 	if (g_ping.audible)
 		printf("\a");
 	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply, millis(g_ping.last));
+	if (g_ping.count > 0 && g_ping.sent >= g_ping.count)
+		sigint_handler();
 }
 
 int main(int ac, char **av)
