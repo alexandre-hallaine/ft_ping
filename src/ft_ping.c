@@ -186,7 +186,6 @@ void sigalrm_handler()
 		sigint_handler();
 	ping();
 	alarm(1);
-
 }
 
 void socket_init()
@@ -205,8 +204,8 @@ void socket_init()
 		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
 			ft_exit("setsockopt", "Could not set TTL");
 	}
-	/*else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_HOPLIMIT, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
-		ft_exit("setsockopt", "Could not set hop limit");*/
+	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
+		ft_exit("setsockopt", "Could not set hop limit");
 	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
 		ft_exit("setsockopt", "Could not set receive hop limit");
 }
@@ -217,7 +216,7 @@ void recv_msg()
 		return;
 
 	t_recv buffer;
-	struct iovec iov = {.iov_base = &buffer, .iov_len = sizeof(buffer)};
+	struct iovec iov = {.iov_base = &buffer, .iov_len = sizeof(buffer) * 2};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
 	if (g_ping.res->ai_family == AF_INET6)
@@ -229,20 +228,31 @@ void recv_msg()
 
 	if ((g_ping.len = recvmsg(g_ping.socket, &msg, 0)) < 0)
 		return;
+
+	// need to check recv length
+	// if (g_ping.len < (int)sizeof(struct icmp))
+	// 	return;
+
+	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
+	{
+		unsigned short id = g_ping.res->ai_family == AF_INET
+								? ((t_recv *)buffer.v4.data)->v4.icmp.un.echo.id
+								: ((struct icmp6_hdr *)(&buffer.v6.data + sizeof(struct ip6_hdr)))->icmp6_id;
+		if (id != g_ping.icmp.un.echo.id)
+			return;
+	}
+	else if (g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.icmp6_id)
+		return;
+
 	g_ping.reply = 1;
 	g_ping.ttl_reply = g_ping.res->ai_family == AF_INET ? buffer.v4.ip.ttl : *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
 
-	// if wrong id (exclude ICMP_TIME_EXCEEDED / ICMP6_TIME_EXCEEDED because it is filled with 0)
-	if ((g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.icmp6_id) && (buffer.v4.icmp.type != ICMP_TIME_EXCEEDED && buffer.v6.icmp.icmp6_type != ICMP6_TIME_EXCEEDED))
-		return;
-
-	// check for ICMP_TIME_EXCEEDED / ICMP6_TIME_EXCEEDED
 	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
 	{
 		if (g_ping.verbose)
 			printf("From %s (%s): Time to live excceeded\n", g_ping.hostname, g_ping.ip);
 		return;
-	} // check for ICMP_ECHO_REPLY
+	}
 	else if (buffer.v4.icmp.type != ICMP_ECHOREPLY && buffer.v6.icmp.icmp6_type != ICMP6_ECHO_REPLY)
 	{
 		if (g_ping.verbose)

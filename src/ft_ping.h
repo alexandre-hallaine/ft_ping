@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 #include <signal.h>
@@ -17,10 +18,12 @@ typedef union s_recv
 	{
 		struct iphdr ip;
 		struct icmphdr icmp;
+		char data[1];
 	} v4;
 	struct
 	{
 		struct icmp6_hdr icmp;
+		char data[1];
 	} v6;
 } t_recv;
 
