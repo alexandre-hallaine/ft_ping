@@ -64,7 +64,7 @@ unsigned short checksum(unsigned short *address, size_t len)
 	return (~sum);
 }
 
-double millis(struct timeval start)
+double seconds(struct timeval start)
 {
 	struct timeval end;
 	gettimeofday(&end, NULL);
@@ -157,10 +157,11 @@ void sigint_handler()
 	freeaddrinfo(g_ping.res);
 
 	if (g_ping.sent > 0)
-		printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss, time %.0fms\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent), millis(g_ping.begin));
+		printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss, time %.0fms\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent), seconds(g_ping.begin));
 
 	if (g_ping.received > 0)
-		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", 0.0, 0.0, 0.0, 0.0);
+		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
+			   g_ping.min, g_ping.sum / g_ping.received, g_ping.max, g_ping.msum / g_ping.received);
 }
 
 void ping()
@@ -208,6 +209,22 @@ void socket_init()
 		ft_exit("setsockopt", "Could not set hop limit");
 	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
 		ft_exit("setsockopt", "Could not set receive hop limit");
+}
+
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
+void update_stats(unsigned short len, unsigned char ttl)
+{
+	double delta = seconds(g_ping.last);
+	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
+		   len, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl, delta);
+
+	if (delta < g_ping.min || g_ping.received == 1)
+		g_ping.min = delta;
+	if (delta > g_ping.max)
+		g_ping.max = delta;
+	g_ping.sum += delta;
+	g_ping.msum += ABS(g_ping.sum / g_ping.received - delta);
 }
 
 void recv_msg()
@@ -265,7 +282,8 @@ void recv_msg()
 		return;
 	if (g_ping.audible)
 		printf("\a");
-	printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2f ms\n", g_ping.len, g_ping.hostname, g_ping.ip, g_ping.icmp.un.echo.sequence, g_ping.ttl_reply, millis(g_ping.last));
+
+	update_stats(g_ping.len, g_ping.ttl_reply);
 	if (g_ping.count > 0 && g_ping.sent >= g_ping.count)
 		sigint_handler();
 }

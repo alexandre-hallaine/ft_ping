@@ -55,6 +55,11 @@ typedef struct s_ping
 
 	struct timeval begin;
 	struct timeval last;
+
+	double min;
+	double max;
+	double sum;
+	double msum;
 } t_ping;
 
 extern t_ping g_ping;
