@@ -22,7 +22,7 @@ typedef union s_recv
 	} v4;
 	struct
 	{
-		struct icmp6_hdr icmp;
+		struct icmphdr icmp;
 		char data[1];
 	} v6;
 } t_recv;
@@ -46,6 +46,7 @@ typedef struct s_ping
 	int audible;
 	long long int count;
 	int quiet;
+	int debug;
 
 	int len;
 	int ttl_reply;

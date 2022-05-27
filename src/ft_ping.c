@@ -2,36 +2,30 @@
 
 t_ping g_ping = {0};
 
-void display_header(void *address)
+void display_header_iphdr(struct iphdr *tmp, char *prefix)
 {
-	struct iphdr *tmp = (void *)address;
-	// display the IP header
-	printf("\nIP header:\n");
-	printf("  |-IP Version       : %d\n", (unsigned int)tmp->version);
-	printf("  |-IP Header Length : %d DWORDS or %d Bytes\n", (unsigned int)tmp->ihl,
-		   (unsigned int)(tmp->ihl * 4));
-	printf("  |-Type Of Service  : %d\n", (unsigned int)tmp->tos);
-	printf("  |-IP Total Length  : %d (Size of Packet)\n",
-		   (unsigned int)tmp->tot_len);
-	printf("  |-Identification   : %d\n", (unsigned int)tmp->id);
-	printf("  |-TTL              : %d\n", (unsigned int)tmp->ttl);
-	printf("  |-Protocol         : %d\n", (unsigned int)tmp->protocol);
-	printf("  |-Checksum         : %d\n", (unsigned int)tmp->check);
+	printf("\n%s\n", prefix);
+	printf("  |-IP Version       : %d\n", tmp->version);
+	printf("  |-IP Header Length : %d DWORDS or %d Bytes\n", tmp->ihl, (tmp->ihl * 4));
+	printf("  |-Type Of Service  : %d\n", tmp->tos);
+	printf("  |-IP Total Length  : %d (Size of Packet)\n", tmp->tot_len / 32 / 8);
+	printf("  |-Identification   : %d\n", tmp->id);
+	printf("  |-TTL              : %d\n", tmp->ttl);
+	printf("  |-Protocol         : %d\n", tmp->protocol);
+	printf("  |-Checksum         : %d\n", tmp->check);
 	struct in_addr addr = {.s_addr = tmp->saddr};
-	printf("  |-Source IP        : %s\n", inet_ntoa(addr));
+	printf("  |-Source IP        : %s", inet_ntoa(addr));
 	addr.s_addr = tmp->daddr;
-	printf("  |-Destination IP   : %s\n", inet_ntoa(addr));
+}
 
-	struct icmphdr *icmp = (void *)address + sizeof(struct iphdr);
-	// display the ICMP header
-	printf("\nICMP header:\n");
-	printf("  |-Type             : %d\n", (unsigned int)icmp->type);
-	printf("  |-Code             : %d\n", (unsigned int)icmp->code);
-	printf("  |-Checksum         : %d\n", (unsigned int)icmp->checksum);
-	printf("  |-Identifier       : %d\n", (unsigned int)icmp->un.echo.id);
-	printf("  |-Sequence Number  : %d\n", (unsigned int)icmp->un.echo.sequence);
-
-	printf("\n");
+void display_header_icmp(struct icmphdr *icmp, char *prefix)
+{
+	printf("\n%s\n", prefix);
+	printf("  |-Type             : %d\n", icmp->type);
+	printf("  |-Code             : %d\n", icmp->code);
+	printf("  |-Checksum         : %d\n", icmp->checksum);
+	printf("  |-Identifier       : %d\n", icmp->un.echo.id);
+	printf("  |-Sequence Number  : %d\n\n", icmp->un.echo.sequence);
 }
 
 void ft_exit(char *cmd, char *msg)
@@ -55,7 +49,6 @@ int ft_atoi(const char *nptr)
 	return (nbr);
 }
 
-// https://www.alpharithms.com/internet-checksum-calculation-steps-044921/
 unsigned short checksum(unsigned short *address, size_t len)
 {
 	unsigned short sum = 0;
@@ -116,6 +109,10 @@ void options(char ***av)
 		case 'q':
 			g_ping.quiet = 1;
 			break;
+		case 'V':
+			g_ping.debug = 1;
+			g_ping.verbose = 1;
+			break;
 		default:
 			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
 			exit(1);
@@ -170,6 +167,8 @@ void ping()
 		return;
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 		ft_exit("sendto", "Could not send packet");
+	if (g_ping.debug)
+		display_header_icmp(&g_ping.icmp, "ICMP Header sent");
 	gettimeofday(&g_ping.last, NULL);
 	g_ping.sent++;
 	g_ping.reply = 0;
@@ -246,31 +245,44 @@ void recv_msg()
 	if ((g_ping.len = recvmsg(g_ping.socket, &msg, 0)) < 0)
 		return;
 
-	// need to check recv length
-	// if (g_ping.len < (int)sizeof(struct icmp))
-	// 	return;
-
-	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
+	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.type == ICMP6_TIME_EXCEEDED)
 	{
 		unsigned short id = g_ping.res->ai_family == AF_INET
 								? ((t_recv *)buffer.v4.data)->v4.icmp.un.echo.id
-								: ((struct icmp6_hdr *)(&buffer.v6.data + sizeof(struct ip6_hdr)))->icmp6_id;
+								: ((struct icmphdr *)(&buffer.v6.data + sizeof(struct ip6_hdr)))->un.echo.id;
 		if (id != g_ping.icmp.un.echo.id)
 			return;
 	}
-	else if (g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.icmp6_id)
+	else if (g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.un.echo.id)
 		return;
+
+	if (g_ping.debug)
+	{
+		if (g_ping.res->ai_family == AF_INET)
+			display_header_iphdr(&buffer.v4.ip, "IP Header received");
+		g_ping.res->ai_family == AF_INET ? display_header_icmp(&buffer.v4.icmp, "ICMP Header received") : display_header_icmp(&buffer.v6.icmp, "ICMP Header received");
+		if (g_ping.len == (sizeof(struct iphdr) + sizeof(struct icmphdr)) * 2)
+		{
+			if (g_ping.res->ai_family == AF_INET)
+			{
+				display_header_iphdr((void *)&buffer.v4 + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD IP Header received");
+				display_header_icmp((void *)&buffer.v4.icmp + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD ICMP Header received");
+			}
+			else
+				display_header_icmp((void *)&buffer.v6.icmp + (sizeof(struct ip6_hdr) + sizeof(struct icmphdr)), "OLD ICMP Header received");
+		}
+	}
 
 	g_ping.reply = 1;
 	g_ping.ttl_reply = g_ping.res->ai_family == AF_INET ? buffer.v4.ip.ttl : *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT);
 
-	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.icmp6_type == ICMP6_TIME_EXCEEDED)
+	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.type == ICMP6_TIME_EXCEEDED)
 	{
 		if (g_ping.verbose)
 			printf("From %s (%s): Time to live excceeded\n", g_ping.hostname, g_ping.ip);
 		return;
 	}
-	else if (buffer.v4.icmp.type != ICMP_ECHOREPLY && buffer.v6.icmp.icmp6_type != ICMP6_ECHO_REPLY)
+	else if (buffer.v4.icmp.type != ICMP_ECHOREPLY && buffer.v6.icmp.type != ICMP6_ECHO_REPLY)
 	{
 		if (g_ping.verbose)
 			printf("From %s (%s): Unknow ICMP type\n", g_ping.hostname, g_ping.ip);
