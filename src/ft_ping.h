@@ -65,4 +65,26 @@ typedef struct s_ping
 
 extern t_ping g_ping;
 
+//ft_ping
+void sigint_handler();
+
+//parse
+void check_args(char **av);
+
+//recv
+void recv_msg();
+
+//utils
+void ft_exit(char *cmd, char *msg);
+int is_digit(char *str);
+int ft_atoi(const char *nptr);
+unsigned short checksum(unsigned short *address, size_t len);
+double seconds(struct timeval start);
+void update_stats(unsigned short len, unsigned char ttl);
+
+//verbose
+void display_header_iphdr(struct iphdr *tmp, char *prefix);
+void display_header_ip6hdr(struct ip6_hdr *header, char *prefix);
+void display_header_icmp(struct icmphdr *icmp, char *prefix);
+
 #endif

@@ -4,7 +4,11 @@ DIRECTORY_SOURCE	=	src
 DIRECTORY_OBJECT	=	objects
 
 FILES_CHECK			=	ft_ping.h
-FILES_SOURCE		=	ft_ping.c
+FILES_SOURCE		=	ft_ping.c \
+						parse.c \
+						recv.c \
+						utils.c \
+						verbose.c
 
 COMPILE				=	gcc
 COMPILE				+=	-Wall -Wextra -Werror
