@@ -18,6 +18,21 @@ void display_header_iphdr(struct iphdr *tmp, char *prefix)
 	addr.s_addr = tmp->daddr;
 }
 
+void display_header_ip6hdr(struct ip6_hdr *header, char *prefix)
+{
+    printf("\n%s\n", prefix);
+    printf("  |-IPv6 Version: %d\n", (header->ip6_vfc & 0xf0) >> 4);
+    printf("  |-Traffic Class: %d\n", (header->ip6_flow & 0x0ff00000) >> 20);
+    printf("  |-Flow Label: %d\n", (header->ip6_flow & 0x000fffff));
+    printf("  |-Payload Length: %d\n", ntohs(header->ip6_plen));
+    printf("  |-Next Header: %d\n", header->ip6_nxt);
+    printf("  |-Hop Limit: %d\n", header->ip6_hlim);
+    struct in_addr addr = {.s_addr = header->ip6_src.s6_addr32[3]};
+    printf("  |-Source Address   : %s\n", inet_ntoa(addr));
+    addr.s_addr = header->ip6_dst.s6_addr32[3];
+    printf("  |-Destination      : %s\n", inet_ntoa(addr));
+}
+
 void display_header_icmp(struct icmphdr *icmp, char *prefix)
 {
 	printf("\n%s\n", prefix);
@@ -265,11 +280,14 @@ void recv_msg()
 		{
 			if (g_ping.res->ai_family == AF_INET)
 			{
-				display_header_iphdr((void *)&buffer.v4 + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD IP Header received");
-				display_header_icmp((void *)&buffer.v4.icmp + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD ICMP Header received");
+				display_header_iphdr((void *)&buffer.v4 + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD IP Header sent");
+				display_header_icmp((void *)&buffer.v4 + ((sizeof(struct iphdr) * 2) + sizeof(struct icmphdr)), "OLD ICMP Header sent");
 			}
 			else
-				display_header_icmp((void *)&buffer.v6.icmp + (sizeof(struct ip6_hdr) + sizeof(struct icmphdr)), "OLD ICMP Header received");
+			{
+				display_header_iphdr((void *)&buffer.v6 + sizeof(struct icmphdr), "OLD IP Header sent");
+				display_header_icmp((void *)&buffer.v6 + (sizeof(struct ip6_hdr) + sizeof(struct icmphdr)), "OLD IP6 Header sent");
+			}
 		}
 	}
 
