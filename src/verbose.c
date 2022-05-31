@@ -20,13 +20,13 @@ void display_header_iphdr(struct iphdr *tmp, char *prefix)
 
 void display_header_ip6hdr(struct ip6_hdr *header, char *prefix)
 {
-    printf("\n%s\n", prefix);
-    printf("  |-IPv6 Version     : %d\n", (header->ip6_vfc & 0xf0) >> 4);
-    printf("  |-Traffic Class    : %d\n", (header->ip6_flow & 0x0ff00000) >> 20);
-    printf("  |-Flow Label       : %d\n", (header->ip6_flow & 0x000fffff));
-    printf("  |-Payload Length   : %d\n", ntohs(header->ip6_plen));
-    printf("  |-Next Header      : %d\n", header->ip6_nxt);
-    printf("  |-Hop Limit        : %d\n", header->ip6_hlim);
+	printf("\n%s\n", prefix);
+	printf("  |-IPv6 Version     : %d\n", (header->ip6_vfc & 0xf0) >> 4);
+	printf("  |-Traffic Class    : %d\n", (header->ip6_flow & 0x0ff00000) >> 20);
+	printf("  |-Flow Label       : %d\n", (header->ip6_flow & 0x000fffff));
+	printf("  |-Payload Length   : %d\n", ntohs(header->ip6_plen));
+	printf("  |-Next Header      : %d\n", header->ip6_nxt);
+	printf("  |-Hop Limit        : %d\n", header->ip6_hlim);
 	char ip[INET6_ADDRSTRLEN];
 	inet_ntop(AF_INET6, &(header->ip6_src), ip, INET6_ADDRSTRLEN);
 	printf("  |-Source IP        : %s\n", ip);

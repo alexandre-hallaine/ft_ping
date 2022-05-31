@@ -44,10 +44,10 @@ void update_stats(unsigned short len, unsigned char ttl)
 	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
 		   len, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl, delta);
 
-	if (delta < g_ping.min || g_ping.received == 1)
-		g_ping.min = delta;
-	if (delta > g_ping.max)
-		g_ping.max = delta;
-	g_ping.sum += delta;
-	g_ping.msum += ABS(g_ping.sum / g_ping.received - delta);
+	if (delta < g_ping.stats.min || g_ping.stats.received == 1)
+		g_ping.stats.min = delta;
+	if (delta > g_ping.stats.max)
+		g_ping.stats.max = delta;
+	g_ping.stats.sum += delta;
+	g_ping.stats.msum += ABS(g_ping.stats.sum / g_ping.stats.received - delta);
 }

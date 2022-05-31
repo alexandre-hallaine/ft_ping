@@ -4,39 +4,44 @@ t_ping g_ping = {0};
 
 void ping()
 {
-	if (g_ping.done == 1)
+	if (!g_ping.running)
 		return;
+
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 		ft_exit("sendto", "Could not send packet");
-	if (g_ping.debug)
+
+	g_ping.stats.send++;
+	g_ping.replied = false;
+
+	if (g_ping.options.debug)
 		display_header_icmp(&g_ping.icmp, "ICMP Header sent");
 	gettimeofday(&g_ping.last, NULL);
-	g_ping.sent++;
-	g_ping.reply = 0;
 }
 
 void sigint_handler()
 {
-	g_ping.done = 1;
+	g_ping.running = false;
 	freeaddrinfo(g_ping.res);
 
-	if (g_ping.sent > 0)
-		printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% packet loss, time %.0fms\n", g_ping.hostname, g_ping.sent, g_ping.received, (int)((g_ping.sent - g_ping.received) * 100 / g_ping.sent), seconds(g_ping.begin));
+	if (g_ping.stats.send > 0)
+		printf("\n--- %s ping statistics ---\n%zd packets transmitted, %zd received, %d%% packet loss, time %.0fms\n",
+			   g_ping.hostname, g_ping.stats.send, g_ping.stats.received,
+			   (int)((g_ping.stats.send - g_ping.stats.received) * 100 / g_ping.stats.send), seconds(g_ping.begin));
 
-	if (g_ping.received > 0)
+	if (g_ping.stats.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
-			   g_ping.min, g_ping.sum / g_ping.received, g_ping.max, g_ping.msum / g_ping.received);
+			   g_ping.stats.min, g_ping.stats.sum / g_ping.stats.received, g_ping.stats.max, g_ping.stats.msum / g_ping.stats.received);
 }
 
 void sigalrm_handler()
 {
-	if (g_ping.reply == 0 && g_ping.sent > 0 && g_ping.verbose)
+	if (!g_ping.replied && g_ping.stats.send > 0 && g_ping.options.verbose)
 		printf("No reply from %s\n", g_ping.hostname);
 
 	++g_ping.icmp.un.echo.sequence;
 	--g_ping.icmp.checksum;
 
-	if (g_ping.count > 0 && g_ping.sent >= g_ping.count)
+	if (g_ping.options.count > 0 && g_ping.stats.send >= g_ping.options.count)
 		sigint_handler();
 	ping();
 	alarm(1);
@@ -55,10 +60,10 @@ void socket_init()
 
 	if (g_ping.res->ai_family == AF_INET)
 	{
-		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
+		if (setsockopt(g_ping.socket, IPPROTO_IP, IP_TTL, &g_ping.options.ttl, sizeof(g_ping.options.ttl)) < 0)
 			ft_exit("setsockopt", "Could not set TTL");
 	}
-	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &g_ping.ttl, sizeof(g_ping.ttl)) < 0)
+	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &g_ping.options.ttl, sizeof(g_ping.options.ttl)) < 0)
 		ft_exit("setsockopt", "Could not set hop limit");
 	else if (setsockopt(g_ping.socket, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, sizeof(on)) < 0)
 		ft_exit("setsockopt", "Could not set receive hop limit");
@@ -68,10 +73,10 @@ int main(int ac, char **av)
 {
 	(void)ac;
 	g_ping.cmd = av[0];
+	g_ping.running = true;
 
 	check_args(av);
-	g_ping.ttl = g_ping.ttl == 0 ? 64 : g_ping.ttl;
-	g_ping.count = g_ping.count == 0 ? -1 : g_ping.count;
+	g_ping.options.ttl = g_ping.options.ttl == 0 ? 64 : g_ping.options.ttl;
 	socket_init();
 
 	signal(SIGINT, sigint_handler);
@@ -86,7 +91,7 @@ int main(int ac, char **av)
 	gettimeofday(&g_ping.begin, NULL);
 	sigalrm_handler();
 
-	while (g_ping.done == 0)
+	while (g_ping.running)
 		recv_msg();
 
 	return (0);
