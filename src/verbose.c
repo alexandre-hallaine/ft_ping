@@ -11,9 +11,11 @@ void display_header_iphdr(struct iphdr *tmp, char *prefix)
 	printf("  |-TTL              : %d\n", tmp->ttl);
 	printf("  |-Protocol         : %d\n", tmp->protocol);
 	printf("  |-Checksum         : %d\n", tmp->check);
-	struct in_addr addr = {.s_addr = tmp->saddr};
-	printf("  |-Source IP        : %s", inet_ntoa(addr));
-	addr.s_addr = tmp->daddr;
+	char ip[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(tmp->saddr), ip, INET_ADDRSTRLEN);
+	printf("  |-Source IP        : %s\n", ip);
+	inet_ntop(AF_INET, &(tmp->daddr), ip, INET_ADDRSTRLEN);
+	printf("  |-Destination IP   : %s\n", ip);
 }
 
 void display_header_ip6hdr(struct ip6_hdr *header, char *prefix)
@@ -25,10 +27,11 @@ void display_header_ip6hdr(struct ip6_hdr *header, char *prefix)
     printf("  |-Payload Length   : %d\n", ntohs(header->ip6_plen));
     printf("  |-Next Header      : %d\n", header->ip6_nxt);
     printf("  |-Hop Limit        : %d\n", header->ip6_hlim);
-    struct in_addr addr = {.s_addr = header->ip6_src.s6_addr32[3]};
-    printf("  |-Source Address   : %s\n", inet_ntoa(addr));
-    addr.s_addr = header->ip6_dst.s6_addr32[3];
-    printf("  |-Destination      : %s", inet_ntoa(addr));
+	char ip[INET6_ADDRSTRLEN];
+	inet_ntop(AF_INET6, &(header->ip6_src), ip, INET6_ADDRSTRLEN);
+	printf("  |-Source IP        : %s\n", ip);
+	inet_ntop(AF_INET6, &(header->ip6_dst), ip, INET6_ADDRSTRLEN);
+	printf("  |-Destination IP   : %s\n", ip);
 }
 
 void display_header_icmp(struct icmphdr *icmp, char *prefix)
