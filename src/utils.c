@@ -1,5 +1,7 @@
 #include "ft_ping.h"
 
+#include <limits.h>
+
 void ft_exit(char *cmd, char *msg)
 {
 	printf("%s: %s: %s\n", g_ping.cmd, cmd, msg);
@@ -18,6 +20,8 @@ int ft_atoi(const char *nptr)
 	ssize_t nbr = 0;
 	while (*nptr >= '0' && *nptr <= '9')
 		nbr = nbr * 10 + (*nptr++ - '0');
+	if (nbr < INT_MIN || nbr > INT_MAX)
+		return (0);
 	return (nbr);
 }
 

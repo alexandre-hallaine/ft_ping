@@ -2,6 +2,25 @@
 
 #include <limits.h>
 
+int get_number(char ***av, int max)
+{
+
+	if (*(**av + 1) != '\0')
+	{
+		char buffer[1 << 10];
+		sprintf(buffer, "Invalid argument for -%c", ***av);
+		ft_exit("usage error", buffer);
+	}
+
+	int value = 0;
+	if (*++*av && is_digit(**av))
+		value = ft_atoi(**av);
+
+	if (value <= 0 || value >= max)
+		ft_exit("usage error", "Value out of range");
+	return (value);
+}
+
 void options(char ***av)
 {
 	while (*++**av)
@@ -11,27 +30,13 @@ void options(char ***av)
 			g_ping.options.verbose = true;
 			break;
 		case 't':
-			if (*(**av + 1) != '\0')
-				ft_exit("usage error", "Invalid argument for -t");
-			int ttl = 0;
-			if (*++*av && is_digit(**av))
-				ttl = ft_atoi(**av);
-			if (ttl <= 0 || ttl > UCHAR_MAX)
-				ft_exit("usage error", "Invalid TTL");
-			g_ping.options.ttl = ttl;
+			g_ping.options.ttl = get_number(av, UCHAR_MAX);
 			return;
 		case 'a':
 			g_ping.options.audible = true;
 			break;
 		case 'c':
-			if (*(**av + 1) != '\0')
-				ft_exit("usage error", "Invalid argument for -c");
-			int count = 0;
-			if (*++*av && is_digit(**av))
-				count = ft_atoi(**av);
-			if (count <= 0)
-				ft_exit("usage error", "Value out of range");
-			g_ping.options.count = count;
+			g_ping.options.count = get_number(av, INT_MAX);
 			return;
 		case 'q':
 			g_ping.options.quiet = true;
@@ -50,14 +55,7 @@ void options(char ***av)
 			g_ping.options.ipv6 = true;
 			break;
 		case 'i':
-			if (*(**av + 1) != '\0')
-				ft_exit("usage error", "Invalid argument for -i");
-			int interval = 0;
-			if (*++*av && is_digit(**av))
-				interval = ft_atoi(**av);
-			if (interval <= 0)
-				ft_exit("usage error", "Value out of range");
-			g_ping.options.interval = interval;
+			g_ping.options.interval = get_number(av, INT_MAX);
 			return;
 		default:
 			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
