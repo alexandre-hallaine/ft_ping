@@ -86,6 +86,8 @@ void recv_msg()
 		return;
 	if (g_ping.options.audible)
 		printf("\a");
+	if (g_ping.options.timestamp)
+		printf("[%f] ", seconds((struct timeval){0, 0}) / 1000.0);
 
 	update_stats(len, ttl_reply);
 	if (g_ping.options.count > 0 && g_ping.stats.send >= g_ping.options.count)
