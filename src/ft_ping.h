@@ -1,16 +1,9 @@
 #ifndef FT_PING_H
 #define FT_PING_H
 
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
-#include <netinet/icmp6.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <sys/time.h>
 #include <stdbool.h>
 
 typedef union
@@ -55,6 +48,15 @@ typedef struct
 
 typedef struct
 {
+	bool replied;
+	bool running;
+
+	struct timeval begin;
+	struct timeval last;
+} t_utils;
+
+typedef struct
+{
 	char *hostname;
 	char ip[INET6_ADDRSTRLEN];
 	char *cmd;
@@ -65,12 +67,7 @@ typedef struct
 
 	t_options options;
 	t_stats stats;
-
-	bool replied;
-	bool running;
-
-	struct timeval begin;
-	struct timeval last;
+	t_utils utils;
 } t_ping;
 
 extern t_ping g_ping;

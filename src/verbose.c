@@ -1,5 +1,7 @@
 #include "ft_ping.h"
 
+#include <arpa/inet.h>
+
 void display_header_iphdr(struct iphdr *tmp, char *prefix)
 {
 	printf("\n%s\n", prefix);

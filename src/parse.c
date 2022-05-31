@@ -1,6 +1,35 @@
 #include "ft_ping.h"
 
 #include <limits.h>
+#include <stdlib.h>
+#include <netdb.h>
+#include <unistd.h>
+
+void print_help()
+{
+	//usage
+	printf("Usage\n  %s [options] <destination>\n\n", g_ping.cmd);
+
+	//options
+	printf("Options:\n");
+	printf("  <destination>      dns name or ip address\n");
+	printf("  -a                 use audible ping\n");
+	printf("  -c <count>         stop after <count> replies\n");
+	printf("  -D                 print timestamps\n");
+	printf("  -i <interval>      seconds between sending each packet\n");
+	printf("  -q                 quiet output\n");
+	printf("  -t <ttl>           define time to live\n");
+	printf("  -v                 verbose output\n");
+	printf("  -V                 debug and verbose output\n\n");
+
+	//IPv4
+	printf("IPv4 options:\n");
+	printf("  -4                 use IPv4\n\n");
+
+	//IPv6
+	printf("IPv6 options:\n");
+	printf("  -6                 use IPv6\n");
+}
 
 int get_number(char ***av, int max)
 {
@@ -26,39 +55,43 @@ void options(char ***av)
 	while (*++**av)
 		switch (***av)
 		{
-		case 'v':
-			g_ping.options.verbose = true;
-			break;
-		case 't':
-			g_ping.options.ttl = get_number(av, UCHAR_MAX);
-			return;
 		case 'a':
 			g_ping.options.audible = true;
 			break;
 		case 'c':
 			g_ping.options.count = get_number(av, INT_MAX);
 			return;
+		case 'D':
+			g_ping.options.timestamp = true;
+			break;
+		case 'i':
+			g_ping.options.interval = get_number(av, INT_MAX);
+			return;
 		case 'q':
 			g_ping.options.quiet = true;
+			break;
+		case 't':
+			g_ping.options.ttl = get_number(av, UCHAR_MAX);
+			return;
+		case 'v':
+			g_ping.options.verbose = true;
 			break;
 		case 'V':
 			g_ping.options.debug = true;
 			g_ping.options.verbose = true;
 			break;
-		case 'D':
-			g_ping.options.timestamp = true;
-			break;
 		case '4':
+			if (g_ping.options.ipv6 == true)
+				ft_exit("usage error", "Only one -4 or -6 option may be specified");
 			g_ping.options.ipv4 = true;
 			break;
 		case '6':
+			if (g_ping.options.ipv4 == true)
+				ft_exit("usage error", "Only one -4 or -6 option may be specified");
 			g_ping.options.ipv6 = true;
 			break;
-		case 'i':
-			g_ping.options.interval = get_number(av, INT_MAX);
-			return;
 		default:
-			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
+			print_help();
 			exit(1);
 		}
 }

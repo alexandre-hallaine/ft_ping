@@ -1,32 +1,39 @@
 #include "ft_ping.h"
 
+#include <signal.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/icmp6.h>
+#include <sys/time.h>
+
 t_ping g_ping = {0};
 
 void ping()
 {
-	if (!g_ping.running)
+	if (!g_ping.utils.running)
 		return;
 
 	if (sendto(g_ping.socket, &g_ping.icmp, sizeof(g_ping.icmp), 0, g_ping.res->ai_addr, g_ping.res->ai_addrlen) < 0)
 		ft_exit("sendto", "Could not send packet");
 
 	g_ping.stats.send++;
-	g_ping.replied = false;
+	g_ping.utils.replied = false;
 
 	if (g_ping.options.debug)
 		display_header_icmp(&g_ping.icmp, "ICMP Header sent");
-	gettimeofday(&g_ping.last, NULL);
+	gettimeofday(&g_ping.utils.last, NULL);
 }
 
 void sigint_handler()
 {
-	g_ping.running = false;
+	g_ping.utils.running = false;
 	freeaddrinfo(g_ping.res);
 
 	if (g_ping.stats.send > 0)
 		printf("\n--- %s ping statistics ---\n%zd packets transmitted, %zd received, %d%% packet loss, time %.0fms\n",
 			   g_ping.hostname, g_ping.stats.send, g_ping.stats.received,
-			   (int)((g_ping.stats.send - g_ping.stats.received) * 100 / g_ping.stats.send), seconds(g_ping.begin));
+			   (int)((g_ping.stats.send - g_ping.stats.received) * 100 / g_ping.stats.send), seconds(g_ping.utils.begin));
 
 	if (g_ping.stats.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
@@ -35,7 +42,7 @@ void sigint_handler()
 
 void sigalrm_handler()
 {
-	if (!g_ping.replied && g_ping.stats.send > 0 && g_ping.options.verbose)
+	if (!g_ping.utils.replied && g_ping.stats.send > 0 && g_ping.options.verbose)
 		printf("No reply from %s\n", g_ping.hostname);
 
 	++g_ping.icmp.un.echo.sequence;
@@ -73,7 +80,7 @@ int main(int ac, char **av)
 {
 	(void)ac;
 	g_ping.cmd = av[0];
-	g_ping.running = true;
+	g_ping.utils.running = true;
 	g_ping.options.ttl = 64;
 	g_ping.options.interval = 1;
 
@@ -89,10 +96,10 @@ int main(int ac, char **av)
 	inet_ntop(g_ping.res->ai_family, g_ping.res->ai_family == AF_INET ? (void *)&((struct sockaddr_in *)g_ping.res->ai_addr)->sin_addr : (void *)&((struct sockaddr_in6 *)g_ping.res->ai_addr)->sin6_addr, g_ping.ip, sizeof(g_ping.ip));
 
 	printf("PING %s (%s) %ld bytes of data.\n", g_ping.hostname, g_ping.ip, sizeof(struct icmphdr) + sizeof(struct iphdr));
-	gettimeofday(&g_ping.begin, NULL);
+	gettimeofday(&g_ping.utils.begin, NULL);
 	sigalrm_handler();
 
-	while (g_ping.running)
+	while (g_ping.utils.running)
 		recv_msg();
 
 	return (0);

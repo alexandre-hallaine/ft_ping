@@ -1,6 +1,8 @@
 #include "ft_ping.h"
 
 #include <limits.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 void ft_exit(char *cmd, char *msg)
 {
@@ -44,7 +46,7 @@ double seconds(struct timeval start)
 
 void update_stats(unsigned short len, unsigned char ttl)
 {
-	double delta = seconds(g_ping.last);
+	double delta = seconds(g_ping.utils.last);
 	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
 		   len, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl, delta);
 

@@ -1,5 +1,8 @@
 #include "ft_ping.h"
 
+#include <netdb.h>
+#include <netinet/icmp6.h>
+
 void *ancillary_data(struct msghdr msg, int len, int level)
 {
 	for (struct cmsghdr *cmsgptr = CMSG_FIRSTHDR(&msg);
@@ -17,7 +20,7 @@ void *ancillary_data(struct msghdr msg, int len, int level)
 
 void recv_msg()
 {
-	if (g_ping.replied)
+	if (g_ping.utils.replied)
 		return;
 
 	t_recv buffer;
@@ -45,7 +48,7 @@ void recv_msg()
 	}
 	else if (g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.un.echo.id)
 		return;
-	g_ping.replied = true;
+	g_ping.utils.replied = true;
 
 	if (g_ping.options.debug)
 	{
