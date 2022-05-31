@@ -43,6 +43,7 @@ typedef struct
 {
 	bool audible;
 	size_t count;
+	size_t interval;
 	int ttl;
 	bool timestamp;
 	bool quiet;

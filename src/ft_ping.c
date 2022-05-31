@@ -44,7 +44,7 @@ void sigalrm_handler()
 	if (g_ping.options.count > 0 && g_ping.stats.send >= g_ping.options.count)
 		sigint_handler();
 	ping();
-	alarm(1);
+	alarm(g_ping.options.interval);
 }
 
 void socket_init()
@@ -54,7 +54,7 @@ void socket_init()
 	if (g_ping.socket < 0)
 		ft_exit("socket", "Could not create socket");
 
-	struct timeval timeout = {1, 0};
+	struct timeval timeout = {g_ping.options.interval, 0};
 	if (setsockopt(g_ping.socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
 		ft_exit("setsockopt", "Could not set receive timeout");
 
@@ -74,9 +74,10 @@ int main(int ac, char **av)
 	(void)ac;
 	g_ping.cmd = av[0];
 	g_ping.running = true;
+	g_ping.options.ttl = 64;
+	g_ping.options.interval = 1;
 
 	check_args(av);
-	g_ping.options.ttl = g_ping.options.ttl == 0 ? 64 : g_ping.options.ttl;
 	socket_init();
 
 	signal(SIGINT, sigint_handler);

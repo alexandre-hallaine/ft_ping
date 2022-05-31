@@ -49,6 +49,16 @@ void options(char ***av)
 		case '6':
 			g_ping.options.ipv6 = true;
 			break;
+		case 'i':
+			if (*(**av + 1) != '\0')
+				ft_exit("usage error", "Invalid argument for -i");
+			int interval = 0;
+			if (*++*av && is_digit(**av))
+				interval = ft_atoi(**av);
+			if (interval <= 0)
+				ft_exit("usage error", "Value out of range");
+			g_ping.options.interval = interval;
+			return;
 		default:
 			printf("Usage: ft_ping [-h] [-t ttl] [-v] [hostname]\n");
 			exit(1);
