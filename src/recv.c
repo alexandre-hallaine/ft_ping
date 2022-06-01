@@ -18,19 +18,19 @@ void *ancillary_data(struct msghdr msg, int len, int level)
 	return NULL;
 }
 
-bool validate_id(t_recv buffer)
+bool validate_id(t_recv *buffer)
 {
 	if (g_ping.utils.replied)
 		return false;
-	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.type == ICMP6_TIME_EXCEEDED)
+	if (buffer->v4.icmp.type == ICMP_TIME_EXCEEDED || buffer->v6.icmp.type == ICMP6_TIME_EXCEEDED)
 	{
 		unsigned short id = g_ping.res->ai_family == AF_INET
-								? ((t_recv *)buffer.v4.data)->v4.icmp.un.echo.id
-								: ((struct icmphdr *)(&buffer.v6.data + sizeof(struct ip6_hdr)))->un.echo.id;
+								? ((t_recv *)buffer->v4.data)->v4.icmp.un.echo.id
+								: ((struct icmphdr *)(&buffer->v6.data + sizeof(struct ip6_hdr)))->un.echo.id;
 		if (id != g_ping.icmp.un.echo.id)
 			return false;
 	}
-	else if (g_ping.icmp.un.echo.id != buffer.v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer.v6.icmp.un.echo.id)
+	else if (g_ping.icmp.un.echo.id != buffer->v4.icmp.un.echo.id && g_ping.icmp.un.echo.id != buffer->v6.icmp.un.echo.id)
 		return false;
 	return (g_ping.utils.replied = true);
 }
@@ -86,7 +86,7 @@ void recv_msg()
 	}
 
 	ssize_t len = recvmsg(g_ping.socket, &msg, 0);
-	if (len < 0 || !validate_id(buffer))
+	if (len < 0 || !validate_id(&buffer))
 		return;
 
 	if (g_ping.options.debug)
