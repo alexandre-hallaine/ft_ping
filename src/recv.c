@@ -35,12 +35,12 @@ bool validate_id(t_recv buffer)
 	return (g_ping.utils.replied = true);
 }
 
-void debug(t_recv buffer, size_t len)
+void debug(t_recv buffer)
 {
 	if (g_ping.res->ai_family == AF_INET)
 		display_header_iphdr(&buffer.v4.ip, "IP Header received");
 	g_ping.res->ai_family == AF_INET ? display_header_icmp(&buffer.v4.icmp, "ICMP Header received") : display_header_icmp(&buffer.v6.icmp, "ICMP6 Header received");
-	if (len == (sizeof(struct iphdr) + sizeof(struct icmphdr)) * 2)
+	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.type == ICMP6_TIME_EXCEEDED)
 	{
 		if (g_ping.res->ai_family == AF_INET)
 		{
@@ -90,7 +90,7 @@ void recv_msg()
 		return;
 
 	if (g_ping.options.debug)
-		debug(buffer, len);
+		debug(buffer);
 	if (check_error(buffer))
 		return;
 
