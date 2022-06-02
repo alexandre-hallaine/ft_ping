@@ -7,10 +7,10 @@
 
 void print_help()
 {
-	//usage
+	// usage
 	printf("Usage\n  %s [options] <destination>\n\n", g_ping.cmd);
 
-	//options
+	// options
 	printf("Options:\n");
 	printf("  <destination>      dns name or ip address\n");
 	printf("  -a                 use audible ping\n");
@@ -22,16 +22,16 @@ void print_help()
 	printf("  -v                 verbose output\n");
 	printf("  -V                 debug and verbose output\n\n");
 
-	//IPv4
+	// IPv4
 	printf("IPv4 options:\n");
 	printf("  -4                 use IPv4\n\n");
 
-	//IPv6
+	// IPv6
 	printf("IPv6 options:\n");
 	printf("  -6                 use IPv6\n");
 }
 
-int get_number(char ***av, int max)
+int get_number(char ***av, size_t max)
 {
 
 	if (*(**av + 1) != '\0')
@@ -41,13 +41,14 @@ int get_number(char ***av, int max)
 		ft_exit("usage error", buffer);
 	}
 
-	int value = 0;
-	if (*++*av && is_digit(**av))
-		value = ft_atoi(**av);
+	size_t nbr = 0;
+	if (is_digit(*++*av))
+		while (***av >= '0' && ***av <= '9')
+			nbr = nbr * 10 + *(**av)++ - '0';
 
-	if (value <= 0 || value >= max)
+	if (nbr == 0 || nbr > max)
 		ft_exit("usage error", "Value out of range");
-	return (value);
+	return (nbr);
 }
 
 void options(char ***av)
@@ -59,13 +60,13 @@ void options(char ***av)
 			g_ping.options.audible = true;
 			break;
 		case 'c':
-			g_ping.options.count = get_number(av, INT_MAX);
+			g_ping.options.count = get_number(av, LLONG_MAX);
 			return;
 		case 'D':
 			g_ping.options.timestamp = true;
 			break;
 		case 'i':
-			g_ping.options.interval = get_number(av, INT_MAX);
+			g_ping.options.interval = get_number(av, INT_MAX / 1000);
 			return;
 		case 'q':
 			g_ping.options.quiet = true;

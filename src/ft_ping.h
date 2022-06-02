@@ -25,6 +25,7 @@ typedef struct
 {
 	size_t send;
 	size_t received;
+	size_t errors;
 
 	double min;
 	double max;
@@ -84,7 +85,6 @@ void recv_msg();
 // utils
 void ft_exit(char *cmd, char *msg);
 int is_digit(char *str);
-int ft_atoi(const char *nptr);
 unsigned short checksum(unsigned short *address, size_t len);
 double seconds(struct timeval start);
 void update_stats(unsigned short len, unsigned char ttl);

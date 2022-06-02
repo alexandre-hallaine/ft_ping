@@ -32,9 +32,15 @@ void sigint_handler()
 		freeaddrinfo(g_ping.res);
 
 	if (g_ping.stats.send > 0)
-		printf("\n--- %s ping statistics ---\n%zd packets transmitted, %zd received, %d%% packet loss, time %.0fms\n",
-			   g_ping.hostname, g_ping.stats.send, g_ping.stats.received,
+	{
+		char buffer[1 << 10];
+		*buffer = 0;
+		if (g_ping.stats.errors > 0)
+			sprintf(buffer, "+%zd errors, ", g_ping.stats.errors);
+		printf("\n--- %s ping statistics ---\n%zd packets transmitted, %zd received, %s%d%% packet loss, time %.0fms\n",
+			   g_ping.hostname, g_ping.stats.send, g_ping.stats.received, buffer,
 			   (int)((g_ping.stats.send - g_ping.stats.received) * 100 / g_ping.stats.send), seconds(g_ping.utils.begin));
+	}
 
 	if (g_ping.stats.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",

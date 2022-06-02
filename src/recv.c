@@ -91,8 +91,10 @@ void recv_msg()
 
 	if (g_ping.options.debug)
 		debug(&buffer);
-	if (check_error(buffer))
+	if (check_error(buffer)) {
+		g_ping.stats.errors++;
 		return;
+	}
 
 	g_ping.stats.received++;
 	if (g_ping.options.quiet)

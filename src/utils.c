@@ -18,16 +18,6 @@ int is_digit(char *str)
 	return !*str;
 }
 
-int ft_atoi(const char *nptr)
-{
-	ssize_t nbr = 0;
-	while (*nptr >= '0' && *nptr <= '9')
-		nbr = nbr * 10 + (*nptr++ - '0');
-	if (nbr < INT_MIN || nbr > INT_MAX)
-		return (0);
-	return (nbr);
-}
-
 unsigned short checksum(unsigned short *address, size_t len)
 {
 	unsigned short sum = 0;
