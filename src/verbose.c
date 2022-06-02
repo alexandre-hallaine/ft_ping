@@ -17,7 +17,7 @@ void display_header_iphdr(struct iphdr *tmp, char *prefix)
 	inet_ntop(AF_INET, &(tmp->saddr), ip, INET_ADDRSTRLEN);
 	printf("  |-Source IP        : %s\n", ip);
 	inet_ntop(AF_INET, &(tmp->daddr), ip, INET_ADDRSTRLEN);
-	printf("  |-Destination IP   : %s\n", ip);
+	printf("  |-Destination IP   : %s", ip);
 }
 
 void display_header_ip6hdr(struct ip6_hdr *header, char *prefix)

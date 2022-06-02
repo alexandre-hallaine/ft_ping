@@ -28,7 +28,8 @@ void ping()
 void sigint_handler()
 {
 	g_ping.utils.running = false;
-	freeaddrinfo(g_ping.res);
+	if (g_ping.res)
+		freeaddrinfo(g_ping.res);
 
 	if (g_ping.stats.send > 0)
 		printf("\n--- %s ping statistics ---\n%zd packets transmitted, %zd received, %d%% packet loss, time %.0fms\n",

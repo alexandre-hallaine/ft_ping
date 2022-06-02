@@ -7,6 +7,7 @@
 void ft_exit(char *cmd, char *msg)
 {
 	printf("%s: %s: %s\n", g_ping.cmd, cmd, msg);
+	sigint_handler();
 	exit(EXIT_FAILURE);
 }
 

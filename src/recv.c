@@ -35,22 +35,22 @@ bool validate_id(t_recv *buffer)
 	return (g_ping.utils.replied = true);
 }
 
-void debug(t_recv buffer)
+void debug(t_recv *buffer)
 {
 	if (g_ping.res->ai_family == AF_INET)
-		display_header_iphdr(&buffer.v4.ip, "IP Header received");
-	g_ping.res->ai_family == AF_INET ? display_header_icmp(&buffer.v4.icmp, "ICMP Header received") : display_header_icmp(&buffer.v6.icmp, "ICMP6 Header received");
-	if (buffer.v4.icmp.type == ICMP_TIME_EXCEEDED || buffer.v6.icmp.type == ICMP6_TIME_EXCEEDED)
+		display_header_iphdr(&buffer->v4.ip, "IP Header received");
+	g_ping.res->ai_family == AF_INET ? display_header_icmp(&buffer->v4.icmp, "ICMP Header received") : display_header_icmp(&buffer->v6.icmp, "ICMP6 Header received");
+	if (buffer->v4.icmp.type == ICMP_TIME_EXCEEDED || buffer->v6.icmp.type == ICMP6_TIME_EXCEEDED)
 	{
 		if (g_ping.res->ai_family == AF_INET)
 		{
-			display_header_iphdr((void *)&buffer.v4 + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD IP Header sent");
-			display_header_icmp((void *)&buffer.v4 + ((sizeof(struct iphdr) * 2) + sizeof(struct icmphdr)), "OLD ICMP Header sent");
+			display_header_iphdr((void *)&buffer->v4 + (sizeof(struct iphdr) + sizeof(struct icmphdr)), "OLD IP Header sent");
+			display_header_icmp((void *)&buffer->v4 + ((sizeof(struct iphdr) * 2) + sizeof(struct icmphdr)), "OLD ICMP Header sent");
 		}
 		else
 		{
-			display_header_ip6hdr((void *)&buffer.v6 + sizeof(struct icmphdr), "OLD IP6 Header sent");
-			display_header_icmp((void *)&buffer.v6 + (sizeof(struct ip6_hdr) + sizeof(struct icmphdr)), "OLD ICMP6 Header sent");
+			display_header_ip6hdr((void *)&buffer->v6 + sizeof(struct icmphdr), "OLD IP6 Header sent");
+			display_header_icmp((void *)&buffer->v6 + (sizeof(struct ip6_hdr) + sizeof(struct icmphdr)), "OLD ICMP6 Header sent");
 		}
 	}
 }
@@ -90,7 +90,7 @@ void recv_msg()
 		return;
 
 	if (g_ping.options.debug)
-		debug(buffer);
+		debug(&buffer);
 	if (check_error(buffer))
 		return;
 

@@ -108,10 +108,8 @@ void init_host(char *hostname)
 	if (g_ping.options.ipv6)
 		hints.ai_family = AF_INET6;
 
-	struct addrinfo *res;
-	if (getaddrinfo(g_ping.hostname, NULL, &hints, &res))
+	if (getaddrinfo(g_ping.hostname, NULL, &hints, &g_ping.res))
 		ft_exit("getaddrinfo", "Could not resolve hostname");
-	g_ping.res = res;
 }
 
 void check_args(char **av)
