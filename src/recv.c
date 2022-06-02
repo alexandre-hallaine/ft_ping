@@ -74,7 +74,7 @@ bool check_error(t_recv buffer)
 
 void recv_msg()
 {
-	t_recv buffer;
+	t_recv buffer = {0};
 	struct iovec iov = {.iov_base = &buffer, .iov_len = sizeof(buffer) * 2};
 	struct msghdr msg = {.msg_iov = &iov, .msg_iovlen = 1};
 
