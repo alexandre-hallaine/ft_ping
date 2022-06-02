@@ -28,7 +28,10 @@ void print_help()
 
 	//IPv6
 	printf("IPv6 options:\n");
-	printf("  -6                 use IPv6\n");
+	printf("  -6                 use IPv6\n\n");
+
+	//bg
+	printf("Made with ♥ by hallainea and Assxios\n");
 }
 
 int get_number(char ***av, int max)
