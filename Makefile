@@ -12,8 +12,8 @@ FILES_SOURCE		=	ft_ping.c \
 
 COMPILE				=	gcc
 COMPILE				+=	-Wall -Wextra -Werror
-COMPILE				+=	-g3 -ofast
-ARGS				=	google.com
+#COMPILE				+=	-g3 -ofast
+ARGS				=	-c 5 google.com
 
 all: $(NAME)
 
