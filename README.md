@@ -1,6 +1,6 @@
 # Ping_chilling
 
-Reimplementation of the command ping written in C.
+Reimplementation of the command ping in C.
 
 Ping_chilling sends `ICMP_ECHO / ICMP6_ECHO_REQUEST` to network hosts. It is used to check if a host is alive. It is also used to measure the round-trip time (RTT) between a host and the source.<br>
 Ping_chilling is fully compatible with **IPV4** and **IPV6** adresses and handles DNS resolution.
