@@ -97,13 +97,6 @@ void recv_msg()
 	}
 
 	g_ping.stats.received++;
-	if (g_ping.options.quiet)
-		return;
-	if (g_ping.options.audible)
-		printf("\a");
-	if (g_ping.options.timestamp)
-		printf("[%f] ", seconds((struct timeval){0, 0}) / 1000.0);
-
 	update_stats(len, g_ping.res->ai_family == AF_INET ? buffer.v4.ip.ttl : *(unsigned char *)ancillary_data(msg, IPPROTO_IPV6, IPV6_HOPLIMIT));
 	if (g_ping.options.count > 0 && g_ping.stats.send >= g_ping.options.count)
 		sigint_handler();

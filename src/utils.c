@@ -30,7 +30,7 @@ double seconds(struct timeval start)
 {
 	struct timeval end;
 	gettimeofday(&end, NULL);
-	return (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000.0;
+	return (double)(end.tv_sec - start.tv_sec) * 1000.0 + (double)(end.tv_usec - start.tv_usec) / 1000.0;
 }
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
@@ -38,13 +38,19 @@ double seconds(struct timeval start)
 void update_stats(unsigned short len, unsigned char ttl)
 {
 	double delta = seconds(g_ping.utils.last);
-	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
-		   len, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl, delta);
-
 	if (delta < g_ping.stats.min || g_ping.stats.received == 1)
 		g_ping.stats.min = delta;
 	if (delta > g_ping.stats.max)
 		g_ping.stats.max = delta;
 	g_ping.stats.sum += delta;
 	g_ping.stats.msum += ABS(g_ping.stats.sum / g_ping.stats.received - delta);
+
+	if (g_ping.options.quiet)
+		return;
+	if (g_ping.options.audible)
+		printf("\a");
+	if (g_ping.options.timestamp)
+		printf("[%f] ", seconds((struct timeval){0, 0}) / 1000.0);
+	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n",
+		   len, g_ping.ip, g_ping.icmp.un.echo.sequence, ttl, delta);
 }

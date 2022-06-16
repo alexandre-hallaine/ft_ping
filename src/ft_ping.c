@@ -44,7 +44,7 @@ void sigint_handler()
 
 	if (g_ping.stats.received > 0)
 		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n",
-			   g_ping.stats.min, g_ping.stats.sum / g_ping.stats.received, g_ping.stats.max, g_ping.stats.msum / g_ping.stats.received);
+			   g_ping.stats.min, g_ping.stats.sum / (double)g_ping.stats.received, g_ping.stats.max, g_ping.stats.msum / (double)g_ping.stats.received);
 }
 
 void sigalrm_handler()
@@ -68,7 +68,7 @@ void socket_init()
 	if (g_ping.socket < 0)
 		ft_exit("socket", "Could not create socket");
 
-	struct timeval timeout = {g_ping.options.interval, 0};
+	struct timeval timeout = {(long)g_ping.options.interval, 0};
 	if (setsockopt(g_ping.socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
 		ft_exit("setsockopt", "Could not set receive timeout");
 

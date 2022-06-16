@@ -34,9 +34,8 @@ void print_help()
 	printf("Made with ♥ by hallainea and Assxios\n");
 }
 
-int get_number(char ***av, size_t max)
+size_t get_number(char ***av, size_t max)
 {
-
 	if (*(**av + 1) != '\0')
 	{
 		char buffer[1 << 10];
@@ -51,7 +50,7 @@ int get_number(char ***av, size_t max)
 
 	if (nbr == 0 || nbr > max)
 		ft_exit("usage error", "Value out of range");
-	return (nbr);
+	return nbr;
 }
 
 void options(char ***av)
@@ -75,7 +74,7 @@ void options(char ***av)
 			g_ping.options.quiet = true;
 			break;
 		case 't':
-			g_ping.options.ttl = get_number(av, UCHAR_MAX);
+			g_ping.options.ttl = (int)get_number(av, UCHAR_MAX);
 			return;
 		case 'v':
 			g_ping.options.verbose = true;
