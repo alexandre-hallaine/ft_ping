@@ -44,7 +44,7 @@ size_t get_number(char ***av, size_t max)
 	}
 
 	size_t nbr = 0;
-	if (is_digit(*++*av))
+	if (*++*av && is_digit(**av))
 		while (***av >= '0' && ***av <= '9')
 			nbr = nbr * 10 + *(**av)++ - '0';
 
