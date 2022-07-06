@@ -39,7 +39,7 @@ size_t get_number(char ***av, size_t max)
 	if (*(**av + 1) != '\0')
 	{
 		char buffer[1 << 10];
-		sprintf(buffer, "Invalid argument for -%c", ***av);
+		sprintf(buffer, "Invalid option -%s", **av);
 		ft_exit("usage error", buffer);
 	}
 
