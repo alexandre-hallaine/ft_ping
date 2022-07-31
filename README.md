@@ -55,6 +55,7 @@ A Checksum is a digit representing the sum of the bits in a piece of stored or t
 ![checksum](files/checksum.png)
 
 > You can find many implementations of a checksum function in the [RFC1017](https://www.rfc-editor.org/rfc/rfc1071#section-4.1).<br>
+> You do NOT need to calculate the checksum for the IPv6
 > To calculate our checksum, we need to add the 16-bit of the packet together and reverse the result. We decided to make our own simple implementation of the checksum function, that you can find below:
 ```c
 unsigned short checksum(unsigned short *address, size_t len)
